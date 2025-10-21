@@ -18,11 +18,15 @@ TagManager:
   - Wall
   - Fish
   - Bucket
+  - blueFish
+  - redFish
+  - greenFish
+  - Tank
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Overlay UI
   - Water
   - UI
   - 
