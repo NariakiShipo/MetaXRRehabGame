@@ -500,5 +500,5 @@ For questions, issues, or suggestions:
 ---
 
 **Last Updated**: October 22, 2025  
-**Unity Version**: 2022.3 LTS  
+**Unity Version**: 6000.0.58f1   
 **Meta XR SDK**: 78.0.0
