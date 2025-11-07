@@ -15,6 +15,12 @@ public class GameModeManager : MonoBehaviour
     [Tooltip("FishSpawnManager 腳本引用")]
     [SerializeField] private FishSpawnManager fishSpawnManager;
     
+    [Tooltip("TaskManager 腳本引用")]
+    [SerializeField] private TaskManager taskManager;
+    
+    [Tooltip("ScoreManager 腳本引用")]
+    [SerializeField] private ScoreManager scoreManager;
+    
     [Header("UI References")]
     [Tooltip("難度選擇按鈕的父物體（選擇後會隱藏）")]
     [SerializeField] private GameObject[] difficultySelectionUI;
@@ -25,13 +31,42 @@ public class GameModeManager : MonoBehaviour
     
     private bool isGameStarted = false;
     private string selectedDifficulty = "";
+    private TaskType currentTaskType;
     
     void Start()
     {
         // 遊戲開始前先暫停其他系統
         InitializeGameSystems(false);
         
+        // 自动查找TaskManager
+        if (taskManager == null)
+        {
+            taskManager = Object.FindFirstObjectByType<TaskManager>();
+        }
+        
+        // 自动查找ScoreManager
+        if (scoreManager == null)
+        {
+            scoreManager = Object.FindFirstObjectByType<ScoreManager>();
+        }
+        
+        // 订阅任务验证事件
+        if (taskManager != null)
+        {
+            taskManager.OnTaskValidated.AddListener(OnTaskValidated);
+            taskManager.OnSubTaskComplete.AddListener(OnSubTaskComplete);
+        }
+        
         Debug.Log("[GameModeManager] 等待玩家選擇難度...");
+    }
+    
+    void OnDestroy()
+    {
+        // 取消订阅
+        if (taskManager != null)
+        {
+            taskManager.OnTaskValidated.RemoveListener(OnTaskValidated);
+        }
     }
     
     /// <summary>
@@ -39,6 +74,7 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     public void OnEasyButtonPressed()
     {
+        currentTaskType = TaskType.CountOnly;
         StartGameWithDifficulty(0, "Easy", easyModeTime);
     }
     
@@ -47,6 +83,7 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     public void OnNormalButtonPressed()
     {
+        currentTaskType = TaskType.ColorCount;
         StartGameWithDifficulty(1, "Normal", normalModeTime);
     }
     
@@ -55,6 +92,7 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     public void OnHardButtonPressed()
     {
+        currentTaskType = TaskType.MultiStage;
         StartGameWithDifficulty(2, "Hard", hardModeTime);
     }
     
@@ -78,12 +116,23 @@ public class GameModeManager : MonoBehaviour
         // 設置 GameManager 的倒數計時
         if (gameManager != null)
         {
-            gameManager.SetTime(difficultyIndex);
+            gameManager.SetTime(difficultyIndex, timeLimit);
             Debug.Log($"[GameModeManager] 已設置計時器：{timeLimit} 秒");
         }
         else
         {
             Debug.LogError("[GameModeManager] GameManager 引用為空！請在 Inspector 中設置");
+        }
+        
+        // 設置分數系統難度
+        if (scoreManager != null)
+        {
+            scoreManager.SetDifficulty(currentTaskType);
+            Debug.Log($"[GameModeManager] 已設置分數系統難度：{currentTaskType}");
+        }
+        else
+        {
+            Debug.LogWarning("[GameModeManager] ScoreManager 引用為空！分數系統未啟用");
         }
         
         // 啟動其他遊戲系統
@@ -97,8 +146,11 @@ public class GameModeManager : MonoBehaviour
             Debug.Log("[GameModeManager] 已隱藏難度選擇 UI");
         }
         
-        // 觸發遊戲開始事件
+        // 触发游戏开始事件
         onGameStart?.Invoke();
+        
+        // 生成第一个任务（会自动设置生成模式和生成鱼）
+        GenerateNewTask();
         
         Debug.Log($"[GameModeManager] 遊戲開始！難度：{difficultyName}");
     }
@@ -166,5 +218,240 @@ public class GameModeManager : MonoBehaviour
     public bool IsGameStarted()
     {
         return isGameStarted;
+    }
+    
+    // ========== 任务系统集成 ==========
+    
+    /// <summary>
+    /// 生成新任务
+    /// </summary>
+    private void GenerateNewTask()
+    {
+        if (taskManager != null)
+        {
+            // 重新生成鱼（在生成任务前）
+            RegenerateFish();
+            
+            // 验证鱼数量是否足够
+            ValidateFishCount();
+            
+            // 生成任务
+            taskManager.GenerateRandomTask(currentTaskType);
+            Debug.Log($"[GameModeManager] 生成新任务：{currentTaskType}");
+        }
+        else
+        {
+            Debug.LogError("[GameModeManager] TaskManager 引用为空！");
+        }
+    }
+    
+    /// <summary>
+    /// 重新生成鱼
+    /// </summary>
+    private void RegenerateFish()
+    {
+        // 先清空桶中的鱼
+        BucketEvent bucketEvent = Object.FindFirstObjectByType<BucketEvent>();
+        if (bucketEvent != null)
+        {
+            bucketEvent.ClearBucket();
+            Debug.Log("[GameModeManager] 已清空桶中的鱼");
+        }
+        
+        if (fishSpawnManager != null)
+        {
+            // 清除所有场景中的鱼
+            fishSpawnManager.ClearAllFish();
+            
+            // 根据当前难度设置生成模式
+            int difficultyIndex = GetDifficultyIndex();
+            fishSpawnManager.SetSpawnMode(difficultyIndex);
+            
+            // 重新生成鱼
+            fishSpawnManager.RegenerateAllFish();
+            
+            Debug.Log($"[GameModeManager] 重新生成鱼，难度：{difficultyIndex}");
+        }
+        else
+        {
+            Debug.LogError("[GameModeManager] FishSpawnManager 引用为空！");
+        }
+    }
+    
+    /// <summary>
+    /// 验证鱼数量是否足够完成任务
+    /// </summary>
+    private void ValidateFishCount()
+    {
+        if (fishSpawnManager == null || taskManager == null) return;
+        
+        // 获取当前任务
+        TaskData currentTask = taskManager.GetCurrentTask();
+        if (currentTask == null) return;
+        
+        // 等待一帧，确保鱼已经生成完毕
+        StartCoroutine(ValidateFishCountCoroutine(currentTask));
+    }
+    
+    /// <summary>
+    /// 延迟验证鱼数量（等待生成完成）
+    /// </summary>
+    private System.Collections.IEnumerator ValidateFishCountCoroutine(TaskData currentTask)
+    {
+        // 等待 0.5 秒，确保所有鱼都已生成
+        yield return new WaitForSeconds(0.5f);
+        
+        // 根据任务类型验证
+        switch (currentTask.taskType)
+        {
+            case TaskType.CountOnly:
+                // 简单模式：只需要足够的鱼即可
+                int totalFish = fishSpawnManager.GetActualTotalFishCount();
+                if (totalFish < currentTask.targetCount)
+                {
+                    Debug.LogError($"[GameModeManager] ❌ 鱼数量不足！当前 {totalFish} 条，任务需要 {currentTask.targetCount} 条");
+                    ShowSpawnPointWarning(currentTask.targetCount);
+                }
+                else
+                {
+                    Debug.Log($"[GameModeManager] ✅ 鱼数量充足：{totalFish} 条（需要 {currentTask.targetCount} 条）");
+                }
+                break;
+                
+            case TaskType.ColorCount:
+                // 中级模式：验证特定颜色的鱼数量
+                int colorFishCount = fishSpawnManager.GetActualFishCountByColor(currentTask.targetColor);
+                if (colorFishCount < currentTask.targetCount)
+                {
+                    Debug.LogError($"[GameModeManager] ❌ {currentTask.targetColor} 数量不足！");
+                    Debug.LogError($"[GameModeManager] 当前场景中有 {colorFishCount} 条，任务需要 {currentTask.targetCount} 条");
+                    ShowSpawnPointWarning(currentTask.targetCount);
+                }
+                else
+                {
+                    Debug.Log($"[GameModeManager] ✅ {currentTask.targetColor} 数量充足：{colorFishCount} 条（需要 {currentTask.targetCount} 条）");
+                }
+                break;
+                
+            case TaskType.MultiStage:
+                // 高级模式：验证所有子任务的鱼数量
+                bool allSubTasksValid = true;
+                foreach (var subTask in currentTask.subTasks)
+                {
+                    int subTaskFishCount = fishSpawnManager.GetActualFishCountByColor(subTask.color);
+                    if (subTaskFishCount < subTask.count)
+                    {
+                        Debug.LogError($"[GameModeManager] ❌ {subTask.color} 数量不足！当前 {subTaskFishCount} 条，需要 {subTask.count} 条");
+                        allSubTasksValid = false;
+                    }
+                    else
+                    {
+                        Debug.Log($"[GameModeManager] ✅ {subTask.color} 数量充足：{subTaskFishCount} 条（需要 {subTask.count} 条）");
+                    }
+                }
+                
+                if (!allSubTasksValid)
+                {
+                    ShowSpawnPointWarning(5); // 高级模式通常需要更多鱼
+                }
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// 显示生成点不足的警告信息
+    /// </summary>
+    private void ShowSpawnPointWarning(int requiredCount)
+    {
+        Debug.LogWarning($"[GameModeManager] 📋 解決方案：");
+        Debug.LogWarning($"[GameModeManager] 1. 在 FishSpawnManager Inspector 中增加 Spawn Points 数量");
+        Debug.LogWarning($"[GameModeManager] 2. 或启用 'Allow Reuse Spawn Points'（自动启用中...）");
+        Debug.LogWarning($"[GameModeManager] 3. 或调整 'Min Fish Per Color' 值（当前默认: 5）");
+    }
+    
+    /// <summary>
+    /// 获取当前难度索引
+    /// </summary>
+    private int GetDifficultyIndex()
+    {
+        switch (currentTaskType)
+        {
+            case TaskType.CountOnly:
+                return 0; // Easy
+            case TaskType.ColorCount:
+                return 1; // Normal
+            case TaskType.MultiStage:
+                return 2; // Hard
+            default:
+                return 0;
+        }
+    }
+    
+    /// <summary>
+    /// 任务验证回调
+    /// </summary>
+    private void OnTaskValidated(TaskValidationResult result)
+    {
+        Debug.Log($"[GameModeManager] 任务验证结果：{result}");
+        
+        switch (result)
+        {
+            case TaskValidationResult.Success:
+                // 任务完成，生成新任务并重新生成鱼
+                Debug.Log("[GameModeManager] 任务完成！生成新任务");
+                
+                // 添加分数
+                if (scoreManager != null)
+                {
+                    scoreManager.AddTaskScore();
+                }
+                
+                GenerateNewTask();
+                break;
+                
+            case TaskValidationResult.Failed:
+                // 任务失败（所有模式都重新生成任务）
+                Debug.Log("[GameModeManager] 任务失败，将重新生成任务");
+                // 实际处理在 OnTaskFailed() 中进行
+                break;
+                
+            case TaskValidationResult.SubTaskComplete:
+                // 子任务完成，继续当前任务（不重新生成鱼）
+                Debug.Log("[GameModeManager] 子任务完成，继续下一阶段");
+                
+                // 添加子任务分数（已移到OnSubTaskComplete中处理）
+                break;
+                
+            case TaskValidationResult.Incomplete:
+                // 任务未完成，继续
+                Debug.Log("[GameModeManager] 任务未完成，继续收集");
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// 子任务完成回调
+    /// </summary>
+    private void OnSubTaskComplete(SubTask subTask)
+    {
+        Debug.Log($"[GameModeManager] 子任务完成：{subTask.color} x {subTask.count}");
+        
+        // 添加子任务分数
+        if (scoreManager != null)
+        {
+            scoreManager.AddSubTaskScore();
+        }
+    }
+    
+    /// <summary>
+    /// 任务失败处理（由ConfirmButtonHandler调用）
+    /// </summary>
+    public void OnTaskFailed()
+    {
+        Debug.Log("[GameModeManager] 处理任务失败");
+        
+        // 所有难度模式在任务失败时都重新生成任务
+        Debug.Log($"[GameModeManager] 任务失败，重新生成任务（难度：{currentTaskType}）");
+        GenerateNewTask();
     }
 }
