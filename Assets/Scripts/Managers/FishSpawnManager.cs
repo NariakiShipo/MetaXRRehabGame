@@ -19,8 +19,6 @@ public class FishSpawnManager : MonoBehaviour
     [Tooltip("Y 軸隨機偏移範圍（上下浮動）")]
     [SerializeField] private float yAxisRandomOffset = 0.1f;
     
-    [Tooltip("X, Z 軸微幅隨機偏移（可選）")]
-    [SerializeField] private float xzAxisRandomOffset = 0.05f;
     
     [Tooltip("生成後等待物理穩定的時間")]
     [SerializeField] private float spawnDelay = 0.1f;
@@ -32,10 +30,17 @@ public class FishSpawnManager : MonoBehaviour
     [Tooltip("是否允許重複使用生成點")]
     [SerializeField] private bool allowReuseSpawnPoints = false;
     
+    [Header("Task System Settings")]
+    [Tooltip("每种颜色最少生成的鱼数量（确保任务可完成）")]
+    [SerializeField] private int minFishPerColor = 5;
+    
     private List<Fish> fish = new List<Fish>();
     private string[] fishname = {"redFish", "blueFish", "greenFish"};
     private List<Vector3> spawnedPositions = new List<Vector3>();
     private bool isDataInitialized = false; // 標記 Fish 資料是否已初始化
+    
+    // 任务系统：控制生成哪些颜色的鱼
+    private List<string> enabledColors = new List<string>();
     
     void Awake()
     {
@@ -62,12 +67,37 @@ public class FishSpawnManager : MonoBehaviour
     {
         fish.Clear();
         
+        // 默认启用所有颜色（如果未设置）
+        if (enabledColors.Count == 0)
+        {
+            enabledColors.AddRange(fishname);
+        }
+        
         // 計算要生成的魚數量
         int totalSpawnPointsCount = spawnPoints != null ? spawnPoints.Length : 0;
+        int enabledFishCount = enabledColors.Count;
         
-        // 為每種魚預先創建資料物件
+        // 計算總需求數量
+        int totalRequiredFish = enabledFishCount * minFishPerColor;
+        
+        // 如果生成點不足且未啟用重複使用，發出警告並自動啟用
+        if (totalRequiredFish > totalSpawnPointsCount && !allowReuseSpawnPoints)
+        {
+            Debug.LogWarning($"[FishSpawnManager] ⚠️ 生成點不足！需要 {totalRequiredFish} 個點，但只有 {totalSpawnPointsCount} 個");
+            Debug.LogWarning($"[FishSpawnManager] 自動啟用 'Allow Reuse Spawn Points' 以確保任務可完成");
+            allowReuseSpawnPoints = true;
+        }
+        
+        // 為每種魚預先創建資料物件（只生成启用的颜色）
         for (int i = 0; i < fishname.Length && i < fishPrefab.Length; i++)
         {
+            // 检查该颜色是否启用
+            if (!enabledColors.Contains(fishname[i]))
+            {
+                Debug.Log($"[FishSpawnManager] {fishname[i]} 未啟用，跳過生成");
+                continue;
+            }
+            
             int spawnCount;
             
             // 如果設置了 min/max spawn count，使用隨機數量
@@ -78,9 +108,12 @@ public class FishSpawnManager : MonoBehaviour
             else
             {
                 // 否則，平均分配生成點給每種魚
-                int pointsPerFishType = totalSpawnPointsCount / fishname.Length;
+                int pointsPerFishType = totalSpawnPointsCount / enabledFishCount;
                 spawnCount = pointsPerFishType;
             }
+            
+            // 任务系统需要：确保每种颜色至少生成足够的鱼来完成任务
+            spawnCount = Mathf.Max(spawnCount, minFishPerColor);
             
             fish.Add(new Fish(fishname[i], spawnCount, i + 1));
             
@@ -89,6 +122,12 @@ public class FishSpawnManager : MonoBehaviour
         
         isDataInitialized = true;
         Debug.Log($"[FishSpawnManager] Fish 資料初始化完成，總共 {fish.Count} 種魚，可用生成點：{totalSpawnPointsCount} 個");
+        
+        // 最終檢查
+        if (totalRequiredFish > totalSpawnPointsCount)
+        {
+            Debug.Log($"[FishSpawnManager] ✅ 已啟用生成點重複使用，可滿足 {totalRequiredFish} 條魚的需求");
+        }
     }
 
     /// <summary>
@@ -147,12 +186,21 @@ public class FishSpawnManager : MonoBehaviour
                     {
                         // 如果允許重複使用，回到列表開頭
                         spawnPointIndex = 0;
-                        Debug.Log($"[FishSpawnManager] 生成點用完，開始重複使用");
+                        Debug.Log($"[FishSpawnManager] 生成點用完，開始重複使用（第 {j+1}/{spawnCount} 隻 {fishData.color}）");
                     }
                     else
                     {
-                        Debug.LogWarning($"[FishSpawnManager] 生成點不足，無法生成所有 {fishData.color}");
-                        fishData.DecrementSpawned();
+                        Debug.LogError($"[FishSpawnManager] ❌ 生成點不足！無法生成所有 {fishData.color}");
+                        Debug.LogError($"[FishSpawnManager] 已生成 {j}/{spawnCount}，缺少 {spawnCount - j} 隻");
+                        Debug.LogError($"[FishSpawnManager] 解決方案：");
+                        Debug.LogError($"[FishSpawnManager] 1. 在 Inspector 中啟用 'Allow Reuse Spawn Points'");
+                        Debug.LogError($"[FishSpawnManager] 2. 或增加場景中的 Spawn Points 數量");
+                        
+                        // 更新實際生成數量
+                        for (int k = j; k < spawnCount; k++)
+                        {
+                            fishData.DecrementSpawned();
+                        }
                         break;
                     }
                 }
@@ -170,6 +218,14 @@ public class FishSpawnManager : MonoBehaviour
                     fishData.DecrementSpawned();
                     continue;
                 }
+                
+                // 添加 FishData 组件（任务系统需要）
+                FishData fishDataComponent = spawnedFish.GetComponent<FishData>();
+                if (fishDataComponent == null)
+                {
+                    fishDataComponent = spawnedFish.AddComponent<FishData>();
+                }
+                fishDataComponent.SetPrefabName(fishData.color);
                 
                 spawnedFishObjects.Add(spawnedFish);
                 
@@ -266,6 +322,12 @@ public class FishSpawnManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         
+        // 检查 GameObject 是否仍然存在（可能在等待期间被销毁）
+        if (fish == null)
+        {
+            yield break; // 如果已被销毁，直接退出协程
+        }
+        
         FishMovement movement = fish.GetComponent<FishMovement>();
         if (movement != null)
         {
@@ -288,6 +350,28 @@ public class FishSpawnManager : MonoBehaviour
     public Fish GetFishByColor(string color)
     {
         return fish.Find(f => f.color == color);
+    }
+    
+    /// <summary>
+    /// 获取场景中实际存在的特定颜色的鱼数量（实时统计）
+    /// </summary>
+    public int GetActualFishCountByColor(string color)
+    {
+        GameObject[] fishes = GameObject.FindGameObjectsWithTag(color);
+        return fishes != null ? fishes.Length : 0;
+    }
+    
+    /// <summary>
+    /// 获取场景中实际存在的所有鱼数量（实时统计）
+    /// </summary>
+    public int GetActualTotalFishCount()
+    {
+        int total = 0;
+        foreach (string color in fishname)
+        {
+            total += GetActualFishCountByColor(color);
+        }
+        return total;
     }
 
     /// <summary>
@@ -321,6 +405,9 @@ public class FishSpawnManager : MonoBehaviour
     /// </summary>
     public void ClearAllFish()
     {
+        // 停止所有协程，避免访问已销毁的对象
+        StopAllCoroutines();
+        
         // 找到所有魚並銷毀
         foreach (string fishTag in fishname)
         {
@@ -334,7 +421,7 @@ public class FishSpawnManager : MonoBehaviour
         fish.Clear();
         isDataInitialized = false;
         
-        Debug.Log("[FishSpawnManager] 已清除所有魚");
+        Debug.Log("[FishSpawnManager] 已清除所有魚并停止所有协程");
     }
 
     /// <summary>
@@ -382,5 +469,44 @@ public class FishSpawnManager : MonoBehaviour
                 Gizmos.color = Color.cyan;
             }
         }
+    }
+    
+    // ========== 任务系统接口 ==========
+    
+    /// <summary>
+    /// 设置生成模式（难度）- 控制生成哪些颜色的鱼
+    /// </summary>
+    /// <param name="difficulty">0=Easy(单色), 1=Normal(3-4色), 2=Hard(3-4色)</param>
+    public void SetSpawnMode(int difficulty)
+    {
+        enabledColors.Clear();
+        
+        switch (difficulty)
+        {
+            case 0: // Easy - 只生成一种颜色
+                string singleColor = fishname[Random.Range(0, fishname.Length)];
+                enabledColors.Add(singleColor);
+                Debug.Log($"[FishSpawnManager] 初級模式：只生成 {singleColor}");
+                break;
+                
+            case 1: // Normal - 随机生成 3-4 种颜色
+            case 2: // Hard - 随机生成 3-4 种颜色
+                int colorCount = Random.Range(3, Mathf.Min(5, fishname.Length + 1));
+                
+                List<string> availableColors = new List<string>(fishname);
+                for (int i = 0; i < colorCount && availableColors.Count > 0; i++)
+                {
+                    int randomIndex = Random.Range(0, availableColors.Count);
+                    enabledColors.Add(availableColors[randomIndex]);
+                    availableColors.RemoveAt(randomIndex);
+                }
+                
+                Debug.Log($"[FishSpawnManager] 中/高級模式：生成 {colorCount} 種顏色：{string.Join(", ", enabledColors)}");
+                break;
+        }
+        
+        // 只重新初始化数据，不立即生成鱼
+        // 生成鱼需要调用 RegenerateAllFish()
+        InitializeFishData();
     }
 }

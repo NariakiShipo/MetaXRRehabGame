@@ -11,7 +11,10 @@ public class BucketEvent : MonoBehaviour
     private int fishCount = 0; 
     private List<Fish> fishes;
     private Dictionary<string, int> fishInBucket = new Dictionary<string, int>(); 
-    private bool isInitialized = false; 
+    private bool isInitialized = false;
+    
+    // 任务系统：追踪桶中的鱼GameObject列表
+    private List<GameObject> fishGameObjectsInBucket = new List<GameObject>(); 
 
     private void Awake()
     {
@@ -41,6 +44,12 @@ public class BucketEvent : MonoBehaviour
         if (!string.IsNullOrEmpty(fishTag))
         {
             Debug.Log($"[BucketEvent] {fishTag} 進入桶子");
+            
+            // 添加到鱼GameObject列表（任务系统需要）
+            if (!fishGameObjectsInBucket.Contains(other.gameObject))
+            {
+                fishGameObjectsInBucket.Add(other.gameObject);
+            }
             
             fishCount += 1;
             fishInBucket[fishTag] += 1;
@@ -72,6 +81,9 @@ public class BucketEvent : MonoBehaviour
         if (!string.IsNullOrEmpty(fishTag))
         {
             Debug.Log($"[BucketEvent] {fishTag} 離開桶子");
+            
+            // 从鱼GameObject列表中移除（任务系统需要）
+            fishGameObjectsInBucket.Remove(other.gameObject);
             
             fishCount -= 1;
             fishInBucket[fishTag] -= 1;
@@ -196,5 +208,45 @@ public class BucketEvent : MonoBehaviour
         
         int totalCaught = fishSpawnManager.GetTotalCaughtCount();
         return (float)totalCaught / totalSpawned;
+    }
+    
+    // ========== 任务系统接口 ==========
+    
+    /// <summary>
+    /// 获取桶中的鱼GameObject列表（任务系统使用）
+    /// </summary>
+    public List<GameObject> GetFishInBucket()
+    {
+        return new List<GameObject>(fishGameObjectsInBucket);
+    }
+    
+    /// <summary>
+    /// 清空桶中的所有鱼（任务系统使用）
+    /// </summary>
+    public void ClearBucket()
+    {
+        Debug.Log($"[BucketEvent] 清空桶，销毁 {fishGameObjectsInBucket.Count} 条鱼");
+        
+        // 销毁所有桶中的鱼
+        foreach (GameObject fish in fishGameObjectsInBucket)
+        {
+            if (fish != null)
+            {
+                Destroy(fish);
+            }
+        }
+        
+        // 清空列表
+        fishGameObjectsInBucket.Clear();
+        
+        // 重置计数
+        fishCount = 0;
+        foreach (string key in new List<string>(fishInBucket.Keys))
+        {
+            fishInBucket[key] = 0;
+        }
+        
+        // 更新UI
+        UpdateUI();
     }
 }
