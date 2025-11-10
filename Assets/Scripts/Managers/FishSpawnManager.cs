@@ -207,7 +207,8 @@ public class FishSpawnManager : MonoBehaviour
                 
                 // Step 3: 從生成點獲取位置，並加入隨機偏移
                 Transform spawnPoint = availableSpawnPoints[spawnPointIndex];
-                Vector3 spawnPosition = GetRandomizedPosition(spawnPoint.position);
+                //Vector3 spawnPosition = GetRandomizedPosition(spawnPoint.position);
+                Vector3 spawnPosition = spawnPoint.position;
 
                 // Step 4: 生成魚 GameObject
                 GameObject spawnedFish = Instantiate(fishPrefab[i], spawnPosition, Quaternion.identity);
