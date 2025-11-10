@@ -23,6 +23,19 @@ TagManager:
   - greenFish
   - Tank
   - Button
+  - QDSUISection
+  - QDSUIPrimaryButton
+  - QDSUITextSecondaryInvertedColor
+  - QDSUITextInvertedColor
+  - QDSUIDestructiveButton
+  - Locomotion
+  - LocoButton
+  - LocoText
+  - PassThroughButton
+  - PassThrough
+  - QDSUITextInputField
+  - SamplesInfoPanel
+  - QDSUIToggleCheckboxRadio
   layers:
   - Default
   - TransparentFX
@@ -30,7 +43,7 @@ TagManager:
   - Overlay UI
   - Water
   - UI
-  - 
+  - Wall
   - 
   - 
   - 
