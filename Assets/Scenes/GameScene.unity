@@ -325,7 +325,7 @@ GameObject:
   - component: {fileID: 23298572}
   - component: {fileID: 23298571}
   - component: {fileID: 23298570}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Side
   m_TagString: Bucket
   m_Icon: {fileID: 0}
@@ -527,7 +527,7 @@ GameObject:
   - component: {fileID: 42728602}
   - component: {fileID: 42728601}
   - component: {fileID: 42728600}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Side (2)
   m_TagString: Bucket
   m_Icon: {fileID: 0}
@@ -3494,7 +3494,7 @@ GameObject:
   - component: {fileID: 405852375}
   - component: {fileID: 405852374}
   - component: {fileID: 405852373}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bottom
   m_TagString: Bucket
   m_Icon: {fileID: 0}
@@ -5095,7 +5095,7 @@ GameObject:
   - component: {fileID: 533428081}
   - component: {fileID: 533428080}
   - component: {fileID: 533428079}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Side (3)
   m_TagString: Bucket
   m_Icon: {fileID: 0}
@@ -8723,7 +8723,7 @@ GameObject:
   - component: {fileID: 896227312}
   - component: {fileID: 896227311}
   - component: {fileID: 896227310}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bottom (1)
   m_TagString: Bucket
   m_Icon: {fileID: 0}
@@ -15149,7 +15149,7 @@ GameObject:
   - component: {fileID: 1835917312}
   - component: {fileID: 1835917311}
   - component: {fileID: 1835917310}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Side (1)
   m_TagString: Bucket
   m_Icon: {fileID: 0}
