@@ -36,17 +36,13 @@ public class GameManager : MonoBehaviour
         {
             isEnd = true;
             Debug.LogWarning("Time's up!");
-            
+
             // 觸發遊戲結束並計算分數
             if (scoreManager != null)
             {
                 scoreManager.EndGame(0f); // 時間用完，沒有剩餘時間獎勵
             }
-            else
-            {
-                // 如果沒有 ScoreManager，保持原有行為
-                Time.timeScale = 0f;
-            }
+            timer = 0f; // 確保時間不會變成負數
         }
     }
 

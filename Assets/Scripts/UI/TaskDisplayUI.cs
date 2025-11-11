@@ -11,7 +11,6 @@ public class TaskDisplayUI : MonoBehaviour
     [Header("UI引用")]
     [SerializeField] private TextMeshProUGUI taskDescriptionText;   // 任务描述文本
     [SerializeField] private TextMeshProUGUI errorMessageText;      // 错误信息文本
-    [SerializeField] private GameObject errorMessagePanel;          // 错误信息面板
     
     [Header("错误信息配置")]
     [SerializeField] private float errorMessageDuration = 2f;       // 错误信息显示时长
@@ -26,12 +25,6 @@ public class TaskDisplayUI : MonoBehaviour
         if (taskManager == null)
         {
             Debug.LogError("[TaskDisplayUI] 找不到TaskManager!");
-        }
-        
-        // 初始化UI
-        if (errorMessagePanel != null)
-        {
-            errorMessagePanel.SetActive(false);
         }
     }
     
@@ -182,14 +175,7 @@ public class TaskDisplayUI : MonoBehaviour
         }
         
         // 显示错误面板
-        if (errorMessagePanel != null)
-        {
-            errorMessagePanel.SetActive(true);
-        }
-        else
-        {
-            Debug.LogWarning("[TaskDisplayUI] errorMessagePanel 未设置，无法显示错误面板");
-        }
+        
         
         // 停止之前的协程（如果存在）
         StopErrorMessageCoroutine();
@@ -238,22 +224,11 @@ public class TaskDisplayUI : MonoBehaviour
     /// </summary>
     private void HideErrorMessage()
     {
-        // 安全检查并隐藏错误面板
-        if (errorMessagePanel != null)
+        if (errorMessageText != null)
         {
-            errorMessagePanel.SetActive(false);
-           
-            if (errorMessageText != null)
-            {
-                errorMessageText.text = "";
-                Debug.Log("[TaskDisplayUI] 已隐藏错误信息");
-            }
-            
+            errorMessageText.text = "";
+            Debug.Log("[TaskDisplayUI] 已隐藏错误信息");
         }
-        // if (errorMessageText != null)
-        // {
-        //     errorMessageText.text = "";
-        // }
     }
     
     /// <summary>
