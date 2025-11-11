@@ -227,6 +227,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2564833305750112515}
+  - component: {fileID: 8655883554886256271}
   m_Layer: 0
   m_Name: ScoopNet
   m_TagString: Untagged
@@ -251,3 +252,36 @@ Transform:
   - {fileID: 6037918502870285490}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8655883554886256271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9110921007804979560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de882d7e32a6ffa45b102eb11f311b75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  snapPoint: {fileID: 0}
+  grabAction:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Grab
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 61313d5c-e3aa-4371-9f0e-e53e7ec36722
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: d44816d9-6774-4bed-9e8b-82c00a6c5380
+        m_Path: 
+        m_Interactions: 
+        m_Processors: 
+        m_Groups: 
+        m_Action: Grab
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
