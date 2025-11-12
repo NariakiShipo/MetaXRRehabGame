@@ -1,133 +1,149 @@
 using UnityEngine;
+using System.Collections;
 
 public class FishForwardMovement : MonoBehaviour
 {
-  [Header("Movement Settings")]
-    [SerializeField] private float speed = 0.5f;        // Forward swim speed
-    [SerializeField] private float turnSpeed = 1.0f;    // How fast the fish can turn
+    [Header("Movement Settings")]
+    [SerializeField] private float speed = 0.5f;
+    [SerializeField] private float turnSpeed = 1.0f;
 
     [Header("Wall Avoidance")]
-    [SerializeField] private float wallCheckDistance = 0.5f; // How far to "feel" for a wall
-    [SerializeField] private LayerMask wallLayerMask;        // Set this in the Inspector to your "Wall" layer
+    [SerializeField] private float wallCheckDistance = 0.5f;
+    [SerializeField] private LayerMask wallLayerMask;
 
     [Header("Behavioral Randomness")]
-    [SerializeField] private float minChangeDirTime = 2.0f; // Min time (sec) before picking a new direction
-    [SerializeField] private float maxChangeDirTime = 5.0f; // Max time (sec) before picking a new direction
-    [SerializeField] private float randomTurnArc = 20.0f;   // How sharply it can randomly turn (in degrees)
+    [SerializeField] private float minChangeDirTime = 2.0f;
+    [SerializeField] private float maxChangeDirTime = 5.0f;
+    [SerializeField] private float randomTurnArc = 20.0f;
+
+    [Header("States")]
+    public bool hovered;
+    public bool selected;
+    public bool isInBucket = false;
+    private bool arrivedAtBucketPoint = false;
+
+    [HideInInspector] public Vector3 initialPosition;
+    [HideInInspector] public Quaternion initialRotation;
+    [HideInInspector] public Transform initialParent;
+    [HideInInspector] public Vector3 initialScale;
+
+    [Header("Return Settings")]
+    public float returnSpeed = 2f;
 
     private Rigidbody rb;
     private Vector3 targetDirection;
     private float timeToChangeDirection;
+    private Animator animator;
+    private Transform bucketSnapPoint;
 
     void Start()
     {
+        animator = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody>();
         rb.isKinematic = true;
         rb.useGravity = false;
 
-        // Start facing a random horizontal direction
         transform.Rotate(0, Random.Range(0, 360), 0);
         targetDirection = transform.forward;
-        
-        // Stagger the first turn
+
+        initialPosition = transform.position;
+        initialRotation = transform.rotation;
+        initialParent = transform.parent;
+        initialScale = transform.localScale;
+
         ScheduleNextDirectionChange();
     }
 
     void FixedUpdate()
     {
-        // 1. Decide where to go
+        if (selected) return;
+
+        // If inside bucket but not yet at the snap point, skip normal movement
+        if (isInBucket && !arrivedAtBucketPoint)
+            return;
+
         UpdateTargetDirection();
-
-        // 2. Smoothly rotate towards that direction
         RotateFish();
-
-        // 3. Always move forward (based on new rotation)
         MoveFish();
     }
 
     void UpdateTargetDirection()
     {
-        // --- Wall Avoidance (Priority #1) ---
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, wallCheckDistance, wallLayerMask))
         {
-            // A wall is detected!
-            // We must turn *immediately* to avoid moving through it.
-
-            // --- THIS IS THE FIX ---
-
-            // Option 1: A natural-looking "bounce" (Recommended)
-            // This calculates the reflection angle, like a pool ball.
             Vector3 reflectDir = Vector3.Reflect(transform.forward, hit.normal).normalized;
-            
-            // Instantly set the rotation. This is not a 'target' anymore, it's a command.
             transform.rotation = Quaternion.LookRotation(reflectDir, Vector3.up);
-            
-            // We *must* also update targetDirection so the smooth rotator doesn't
-            // try to "correct" our instant turn.
             targetDirection = reflectDir;
-
-
-            // Option 2: The simple 180-degree "turn back" (Your original idea)
-            // If you prefer the simple 180-degree flip, use this instead of Option 1.
-            /*
-            Vector3 turnBackDir = -transform.forward;
-            transform.rotation = Quaternion.LookRotation(turnBackDir, Vector3.up);
-            targetDirection = turnBackDir;
-            */
-            
-            // -------------------------
-
-            // Reset the random timer so it doesn't try to turn again right away
             ScheduleNextDirectionChange();
-            return; // Exit early, wall avoidance is most important
+            return;
         }
 
-        // --- Random Behavior (Priority #2) ---
-        // (This part is the same as before and will only run if NO wall is detected)
         timeToChangeDirection -= Time.fixedDeltaTime;
-
         if (timeToChangeDirection <= 0)
         {
-            // Time to pick a new random direction
             Quaternion randomRotation = Quaternion.Euler(
-                Random.Range(-randomTurnArc, randomTurnArc), // Pitch
-                Random.Range(-randomTurnArc, randomTurnArc), // Yaw
-                0                                            // Roll
+                Random.Range(-randomTurnArc, randomTurnArc),
+                Random.Range(-randomTurnArc, randomTurnArc),
+                0
             );
-            
-            // Apply this random rotation to our current forward direction
-            // This becomes the *target* for the smooth Slerp turn.
             targetDirection = (randomRotation * transform.forward).normalized;
-
-            // Schedule the next change
             ScheduleNextDirectionChange();
         }
     }
 
     void RotateFish()
     {
-        // Create the target rotation
         Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
-
-        // Smoothly interpolate from our current rotation to the target rotation
-        // The 'turnSpeed' controls how fast this Slerp happens.
-        rb.MoveRotation(Quaternion.Slerp(
-            transform.rotation,
-            targetRotation,
-            turnSpeed * Time.fixedDeltaTime
-        ));
+        rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.fixedDeltaTime));
     }
 
     void MoveFish()
     {
-        // We always move along our *actual* forward vector (which is being rotated by RotateFish)
         rb.MovePosition(transform.position + transform.forward * speed * Time.fixedDeltaTime);
     }
 
     void ScheduleNextDirectionChange()
     {
-        // Reset the timer with a new random value
         timeToChangeDirection = Random.Range(minChangeDirTime, maxChangeDirTime);
     }
+
+    public void SnapTo(Transform snapPoint)
+    {
+        transform.SetParent(snapPoint, true);
+        transform.position = snapPoint.position;
+        transform.rotation = snapPoint.rotation;
+        transform.localScale = initialScale;
+        selected = true;
+        animator.SetBool("OnScoop", selected);
+    }
+
+    public void ReturnToOriginal()
+    {
+        selected = false;
+        animator.SetBool("OnScoop", selected);
+        transform.SetParent(initialParent, true);
+        transform.localScale = initialScale;
+        StopAllCoroutines();
+        StartCoroutine(ReturnSmooth(initialPosition, initialRotation));
+    }
+
+    private IEnumerator ReturnSmooth(Vector3 targetPos, Quaternion targetRot)
+    {
+        float t = 0f;
+        Vector3 startPos = transform.position;
+        Quaternion startRot = transform.rotation;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime * returnSpeed;
+            transform.position = Vector3.Lerp(startPos, targetPos, t);
+            transform.rotation = Quaternion.Lerp(startRot, targetRot, t);
+            yield return null;
+        }
+
+        transform.position = targetPos;
+        transform.rotation = targetRot;
+    }
+
 }
