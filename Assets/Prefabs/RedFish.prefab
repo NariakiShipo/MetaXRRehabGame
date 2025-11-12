@@ -110,11 +110,10 @@ GameObject:
   - component: {fileID: 825640110866540883}
   - component: {fileID: 4852450181409871277}
   - component: {fileID: 2952471255428474251}
-  - component: {fileID: 8064035868797609070}
   - component: {fileID: -2209053055826499336}
   m_Layer: 0
   m_Name: RedFish
-  m_TagString: redFish
+  m_TagString: Fish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -237,23 +236,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &8064035868797609070
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1120582618320241927}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 193bfd9663f43db4e9dec96301762713, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 0.5
-  changeTargetInterval: 3
-  usePhysics: 1
-  drag: 1
-  angularDrag: 0.5
 --- !u!114 &-2209053055826499336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,6 +257,14 @@ MonoBehaviour:
   minChangeDirTime: 2
   maxChangeDirTime: 5
   randomTurnArc: 20
+  hovered: 0
+  selected: 0
+  isInBucket: 0
+  initialPosition: {x: 0, y: 0, z: 0}
+  initialRotation: {x: 0, y: 0, z: 0, w: 0}
+  initialParent: {fileID: 0}
+  initialScale: {x: 0, y: 0, z: 0}
+  returnSpeed: 2
 --- !u!1001 &8226904474043594255
 PrefabInstance:
   m_ObjectHideFlags: 0

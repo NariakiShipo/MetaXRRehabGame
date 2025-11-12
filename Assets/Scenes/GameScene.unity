@@ -327,7 +327,7 @@ GameObject:
   - component: {fileID: 23298570}
   m_Layer: 6
   m_Name: Side
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -529,7 +529,7 @@ GameObject:
   - component: {fileID: 42728600}
   m_Layer: 6
   m_Name: Side (2)
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -700,6 +700,7 @@ Transform:
   - {fileID: 896227309}
   - {fileID: 1733688652}
   - {fileID: 1269183200}
+  - {fileID: 552016227}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!65 &52269704
@@ -721,8 +722,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0261062, y: 1.1391182, z: 1}
-  m_Center: {x: 0.5426499, y: 0.06955871, z: 0}
+  m_Size: {x: 1.0261062, y: 1.0281305, z: 1}
+  m_Center: {x: 0.5426499, y: 0.014064908, z: 0}
 --- !u!114 &52269706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3496,7 +3497,7 @@ GameObject:
   - component: {fileID: 405852373}
   m_Layer: 6
   m_Name: Bottom
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5097,7 +5098,7 @@ GameObject:
   - component: {fileID: 533428079}
   m_Layer: 6
   m_Name: Side (3)
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5277,6 +5278,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1561072245}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &552016226
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 552016227}
+  m_Layer: 0
+  m_Name: FishPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &552016227
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552016226}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.553, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 52269702}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &556805814
 GameObject:
@@ -8725,7 +8757,7 @@ GameObject:
   - component: {fileID: 896227310}
   m_Layer: 6
   m_Name: Bottom (1)
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12672,6 +12704,26 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 1725358229712392652, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: snapPoint
+      value: 
+      objectReference: {fileID: 2003851305}
+    - target: {fileID: 1725358229712392652, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1725358229712392652, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Id
+      value: 3fcb8d54-ff93-41d3-83e7-4192477607a3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1725358229712392652, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Path
+      value: <QuestTouchPlusController>{RightHand}/triggerPressed
+      objectReference: {fileID: 0}
+    - target: {fileID: 1725358229712392652, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Action
+      value: Grab
+      objectReference: {fileID: 0}
     - target: {fileID: 2358056213607124570, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
       propertyPath: m_TagString
       value: Scooper
@@ -12716,6 +12768,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8499561348503489871, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: snapPoint
+      value: 
+      objectReference: {fileID: 2003851305}
+    - target: {fileID: 8499561348503489871, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8499561348503489871, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Id
+      value: 04e3a5da-1a2c-4a0d-9908-a3879012eda7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8499561348503489871, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Path
+      value: <QuestTouchPlusController>{RightHand}/triggerPressed
+      objectReference: {fileID: 0}
+    - target: {fileID: 8499561348503489871, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: grabAction.m_Action.m_SingletonActionBindings.Array.data[0].m_Action
+      value: Grab
+      objectReference: {fileID: 0}
     - target: {fileID: 8655883554886256271, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
       propertyPath: snapPoint
       value: 
@@ -12748,7 +12820,12 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 9216162857589745665, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 0}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -15030,7 +15107,7 @@ GameObject:
   - component: {fileID: 1835917310}
   m_Layer: 6
   m_Name: Side (1)
-  m_TagString: Bucket
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -16439,7 +16516,7 @@ Transform:
   m_GameObject: {fileID: 2003851304}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.0167, z: 0.137}
+  m_LocalPosition: {x: 0.0188, y: 0.0167, z: 0.137}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
