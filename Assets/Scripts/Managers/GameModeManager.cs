@@ -3,11 +3,6 @@ using UnityEngine.Events;
 
 public class GameModeManager : MonoBehaviour
 {
-    [Header("Game Mode Settings")]
-    [SerializeField] private float easyModeTime = 180f;    // 3 分鐘
-    [SerializeField] private float normalModeTime = 300f;  // 5 分鐘
-    [SerializeField] private float hardModeTime = 600f;    // 10 分鐘
-    
     [Header("References")]
     [Tooltip("GameManager 腳本引用")]
     [SerializeField] private GameManager gameManager;
@@ -21,9 +16,15 @@ public class GameModeManager : MonoBehaviour
     [Tooltip("ScoreManager 腳本引用")]
     [SerializeField] private ScoreManager scoreManager;
     
+    [Tooltip("DifficultyManager 難度管理器引用")]
+    [SerializeField] private DifficultyManager difficultyManager;
+    
     [Header("UI References")]
     [Tooltip("難度選擇按鈕的父物體（選擇後會隱藏）")]
     [SerializeField] private GameObject[] difficultySelectionUI;
+    
+    [Tooltip("時間選擇按鈕的父物體（難度選擇後顯示）")]
+    [SerializeField] private GameObject[] timeSelectionUI;
     
     [Header("Events")]
     [Tooltip("遊戲開始時觸發")]
@@ -31,12 +32,19 @@ public class GameModeManager : MonoBehaviour
     
     private bool isGameStarted = false;
     private string selectedDifficulty = "";
-    private TaskType currentTaskType;
+    private int selectedDifficultyIndex = -1;
+    private float selectedTimeLimit = 0f;
     
     void Start()
     {
         // 遊戲開始前先暫停其他系統
         InitializeGameSystems(false);
+        
+        // 自动查找DifficultyManager
+        if (difficultyManager == null)
+        {
+            difficultyManager = Object.FindFirstObjectByType<DifficultyManager>();
+        }
         
         // 自动查找TaskManager
         if (taskManager == null)
@@ -57,6 +65,9 @@ public class GameModeManager : MonoBehaviour
             taskManager.OnSubTaskComplete.AddListener(OnSubTaskComplete);
         }
         
+        // 初始化時隱藏時間選擇UI
+        HideTimeSelectionUI();
+        
         Debug.Log("[GameModeManager] 等待玩家選擇難度...");
     }
     
@@ -70,30 +81,161 @@ public class GameModeManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Easy 按鈕按下時調用（180 秒 / 3 分鐘）
+    /// Easy 按鈕按下時調用
     /// </summary>
     public void OnEasyButtonPressed()
     {
-        currentTaskType = TaskType.CountOnly;
-        StartGameWithDifficulty(0, "Easy", easyModeTime);
+        if (difficultyManager != null)
+        {
+            difficultyManager.SetEasyDifficulty();
+            selectedDifficultyIndex = 0;
+            selectedDifficulty = "Easy";
+            
+            // 隱藏難度選擇UI，顯示時間選擇UI
+            HideDifficultySelectionUI();
+            ShowTimeSelectionUI();
+            
+            Debug.Log("[GameModeManager] 選擇簡單難度，請選擇時間");
+        }
+        else
+        {
+            Debug.LogError("[GameModeManager] DifficultyManager 未設置！");
+        }
     }
     
     /// <summary>
-    /// Normal 按鈕按下時調用（300 秒 / 5 分鐘）
+    /// Normal 按鈕按下時調用
     /// </summary>
     public void OnNormalButtonPressed()
     {
-        currentTaskType = TaskType.ColorCount;
-        StartGameWithDifficulty(1, "Normal", normalModeTime);
+        if (difficultyManager != null)
+        {
+            difficultyManager.SetNormalDifficulty();
+            selectedDifficultyIndex = 1;
+            selectedDifficulty = "Normal";
+            
+            // 隱藏難度選擇UI，顯示時間選擇UI
+            HideDifficultySelectionUI();
+            ShowTimeSelectionUI();
+            
+            Debug.Log("[GameModeManager] 選擇普通難度，請選擇時間");
+        }
+        else
+        {
+            Debug.LogError("[GameModeManager] DifficultyManager 未設置！");
+        }
     }
     
     /// <summary>
-    /// Hard 按鈕按下時調用（600 秒 / 10 分鐘）
+    /// Hard 按鈕按下時調用
     /// </summary>
     public void OnHardButtonPressed()
     {
-        currentTaskType = TaskType.MultiStage;
-        StartGameWithDifficulty(2, "Hard", hardModeTime);
+        if (difficultyManager != null)
+        {
+            difficultyManager.SetHardDifficulty();
+            selectedDifficultyIndex = 2;
+            selectedDifficulty = "Hard";
+            
+            // 隱藏難度選擇UI，顯示時間選擇UI
+            HideDifficultySelectionUI();
+            ShowTimeSelectionUI();
+            
+            Debug.Log("[GameModeManager] 選擇困難難度，請選擇時間");
+        }
+        else
+        {
+            Debug.LogError("[GameModeManager] DifficultyManager 未設置！");
+        }
+    }
+    
+    /// <summary>
+    /// 3分鐘按鈕按下時調用（180秒）
+    /// </summary>
+    public void OnTime3MinButtonPressed()
+    {
+        selectedTimeLimit = 180f;
+        StartGameWithSelectedSettings();
+    }
+    
+    /// <summary>
+    /// 5分鐘按鈕按下時調用（300秒）
+    /// </summary>
+    public void OnTime5MinButtonPressed()
+    {
+        selectedTimeLimit = 300f;
+        StartGameWithSelectedSettings();
+    }
+    
+    /// <summary>
+    /// 10分鐘按鈕按下時調用（600秒）
+    /// </summary>
+    public void OnTime10MinButtonPressed()
+    {
+        selectedTimeLimit = 600f;
+        StartGameWithSelectedSettings();
+    }
+    
+    /// <summary>
+    /// 使用選擇的設定開始遊戲
+    /// </summary>
+    private void StartGameWithSelectedSettings()
+    {
+        if (selectedDifficultyIndex < 0 || selectedTimeLimit <= 0)
+        {
+            Debug.LogError("[GameModeManager] 未正確選擇難度或時間！");
+            return;
+        }
+        
+        // 設置自定義時間限制
+        if (difficultyManager != null)
+        {
+            difficultyManager.SetCustomTimeLimit(selectedTimeLimit);
+        }
+        
+        // 隱藏時間選擇UI
+        HideTimeSelectionUI();
+        
+        // 開始遊戲
+        StartGameWithDifficulty(selectedDifficultyIndex, selectedDifficulty, selectedTimeLimit);
+    }
+    
+    /// <summary>
+    /// 隱藏難度選擇UI
+    /// </summary>
+    private void HideDifficultySelectionUI()
+    {
+        if (difficultySelectionUI != null)
+        {
+            foreach (var ui in difficultySelectionUI)
+                ui.SetActive(false);
+            Debug.Log("[GameModeManager] 已隱藏難度選擇 UI");
+        }
+    }
+    
+    /// <summary>
+    /// 顯示時間選擇UI
+    /// </summary>
+    private void ShowTimeSelectionUI()
+    {
+        if (timeSelectionUI != null)
+        {
+            foreach (var ui in timeSelectionUI)
+                ui.SetActive(true);
+            Debug.Log("[GameModeManager] 已顯示時間選擇 UI");
+        }
+    }
+    
+    /// <summary>
+    /// 隱藏時間選擇UI
+    /// </summary>
+    private void HideTimeSelectionUI()
+    {
+        if (timeSelectionUI != null)
+        {
+            foreach (var ui in timeSelectionUI)
+                ui.SetActive(false);
+        }
     }
     
     /// <summary>
@@ -124,27 +266,10 @@ public class GameModeManager : MonoBehaviour
             Debug.LogError("[GameModeManager] GameManager 引用為空！請在 Inspector 中設置");
         }
         
-        // 設置分數系統難度
-        if (scoreManager != null)
-        {
-            scoreManager.SetDifficulty(currentTaskType);
-            Debug.Log($"[GameModeManager] 已設置分數系統難度：{currentTaskType}");
-        }
-        else
-        {
-            Debug.LogWarning("[GameModeManager] ScoreManager 引用為空！分數系統未啟用");
-        }
+        // 注意：分数系统已由DifficultyManager配置，不需要在这里再设置
         
         // 啟動其他遊戲系統
         InitializeGameSystems(true);
-        
-        // 隱藏難度選擇 UI
-        if (difficultySelectionUI != null)
-        {
-            foreach (var ui in difficultySelectionUI)
-                ui.SetActive(false);
-            Debug.Log("[GameModeManager] 已隱藏難度選擇 UI");
-        }
         
         // 触发游戏开始事件
         onGameStart?.Invoke();
@@ -184,13 +309,16 @@ public class GameModeManager : MonoBehaviour
     {
         isGameStarted = false;
         selectedDifficulty = "";
+        selectedDifficultyIndex = -1;
+        selectedTimeLimit = 0f;
         
-        // 重新顯示難度選擇 UI
+        // 重新顯示難度選擇 UI，隱藏時間選擇UI
         if (difficultySelectionUI != null)
         {
             foreach (var ui in difficultySelectionUI)
                 ui.SetActive(true);
         }
+        HideTimeSelectionUI();
         
         // 暫停遊戲系統
         InitializeGameSystems(false);
@@ -227,7 +355,7 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     private void GenerateNewTask()
     {
-        if (taskManager != null)
+        if (taskManager != null && difficultyManager != null)
         {
             // 重新生成鱼（在生成任务前）
             RegenerateFish();
@@ -235,13 +363,19 @@ public class GameModeManager : MonoBehaviour
             // 验证鱼数量是否足够
             ValidateFishCount();
             
+            // 从DifficultyManager获取任务类型
+            TaskType taskType = difficultyManager.GetCurrentTaskType();
+            
             // 生成任务
-            taskManager.GenerateRandomTask(currentTaskType);
-            Debug.Log($"[GameModeManager] 生成新任务：{currentTaskType}");
+            taskManager.GenerateRandomTask(taskType);
+            Debug.Log($"[GameModeManager] 生成新任务：{taskType}");
         }
         else
         {
-            Debug.LogError("[GameModeManager] TaskManager 引用为空！");
+            if (taskManager == null)
+                Debug.LogError("[GameModeManager] TaskManager 引用为空！");
+            if (difficultyManager == null)
+                Debug.LogError("[GameModeManager] DifficultyManager 引用为空！");
         }
     }
     
@@ -258,23 +392,25 @@ public class GameModeManager : MonoBehaviour
             Debug.Log("[GameModeManager] 已清空桶中的鱼");
         }
         
-        if (fishSpawnManager != null)
+        if (fishSpawnManager != null && difficultyManager != null)
         {
             // 清除所有场景中的鱼
             fishSpawnManager.ClearAllFish();
             
-            // 根据当前难度设置生成模式
-            int difficultyIndex = GetDifficultyIndex();
-            fishSpawnManager.SetSpawnMode(difficultyIndex);
+            // 注意：生成模式已由DifficultyManager在难度选择时配置，不需要再设置
             
             // 重新生成鱼
             fishSpawnManager.RegenerateAllFish();
             
+            int difficultyIndex = difficultyManager.GetCurrentDifficultyIndex();
             Debug.Log($"[GameModeManager] 重新生成鱼，难度：{difficultyIndex}");
         }
         else
         {
-            Debug.LogError("[GameModeManager] FishSpawnManager 引用为空！");
+            if (fishSpawnManager == null)
+                Debug.LogError("[GameModeManager] FishSpawnManager 引用为空！");
+            if (difficultyManager == null)
+                Debug.LogError("[GameModeManager] DifficultyManager 引用为空！");
         }
     }
     
@@ -374,17 +510,13 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     private int GetDifficultyIndex()
     {
-        switch (currentTaskType)
+        if (difficultyManager != null)
         {
-            case TaskType.CountOnly:
-                return 0; // Easy
-            case TaskType.ColorCount:
-                return 1; // Normal
-            case TaskType.MultiStage:
-                return 2; // Hard
-            default:
-                return 0;
+            return difficultyManager.GetCurrentDifficultyIndex();
         }
+        
+        Debug.LogWarning("[GameModeManager] DifficultyManager 未设置，返回默认难度0");
+        return 0;
     }
     
     /// <summary>
@@ -451,7 +583,11 @@ public class GameModeManager : MonoBehaviour
         Debug.Log("[GameModeManager] 处理任务失败");
         
         // 所有难度模式在任务失败时都重新生成任务
-        Debug.Log($"[GameModeManager] 任务失败，重新生成任务（难度：{currentTaskType}）");
+        if (difficultyManager != null)
+        {
+            TaskType taskType = difficultyManager.GetCurrentTaskType();
+            Debug.Log($"[GameModeManager] 任务失败，重新生成任务（难度：{taskType}）");
+        }
         GenerateNewTask();
     }
 }

@@ -34,7 +34,6 @@ public class FishForwardMovement : MonoBehaviour
     private Vector3 targetDirection;
     private float timeToChangeDirection;
     private Animator animator;
-    private Transform bucketSnapPoint;
 
     void Start()
     {
@@ -126,6 +125,20 @@ public class FishForwardMovement : MonoBehaviour
         transform.localScale = initialScale;
         StopAllCoroutines();
         StartCoroutine(ReturnSmooth(initialPosition, initialRotation));
+    }
+
+    public void GoToNewPosition()
+    {
+        Vector3 newPosition = transform.position;
+        Quaternion newRotation = transform.rotation;
+        selected = false;
+        isInBucket = false;
+        arrivedAtBucketPoint = false;
+        animator.SetBool("OnScoop", selected);
+        transform.SetParent(initialParent, true);
+        transform.localScale = initialScale;
+        StopAllCoroutines();
+        StartCoroutine(ReturnSmooth(newPosition, newRotation));
     }
 
     private IEnumerator ReturnSmooth(Vector3 targetPos, Quaternion targetRot)

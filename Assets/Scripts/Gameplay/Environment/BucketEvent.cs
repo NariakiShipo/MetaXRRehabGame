@@ -45,6 +45,14 @@ public class BucketEvent : MonoBehaviour
         {
             Debug.Log($"[BucketEvent] {fishTag} 進入桶子");
             
+            // 设置鱼的 isInBucket 状态
+            FishForwardMovement fishMovement = other.GetComponent<FishForwardMovement>();
+            if (fishMovement != null)
+            {
+                fishMovement.isInBucket = true;
+                Debug.Log($"[BucketEvent] 设置 {fishTag} isInBucket = true");
+            }
+            
             // 添加到鱼GameObject列表（任务系统需要）
             if (!fishGameObjectsInBucket.Contains(other.gameObject))
             {
@@ -81,6 +89,14 @@ public class BucketEvent : MonoBehaviour
         if (!string.IsNullOrEmpty(fishTag))
         {
             Debug.Log($"[BucketEvent] {fishTag} 離開桶子");
+            
+            // 重置鱼的 isInBucket 状态
+            FishForwardMovement fishMovement = other.GetComponent<FishForwardMovement>();
+            if (fishMovement != null)
+            {
+                fishMovement.isInBucket = false;
+                Debug.Log($"[BucketEvent] 设置 {fishTag} isInBucket = false");
+            }
             
             // 从鱼GameObject列表中移除（任务系统需要）
             fishGameObjectsInBucket.Remove(other.gameObject);

@@ -47,7 +47,7 @@ public class ScoopFish : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Fish"))
+        if (collision.gameObject.CompareTag("redFish") || collision.gameObject.CompareTag("blueFish") || collision.gameObject.CompareTag("greenFish"))
             hoveredFish = collision.gameObject.GetComponent<FishForwardMovement>();
     }
 
@@ -84,5 +84,7 @@ public class ScoopFish : MonoBehaviour
         // Return only if NOT in basket
         if (!fish.isInBucket)
             fish.ReturnToOriginal();
+        else
+            fish.GoToNewPosition();
     }
 }
