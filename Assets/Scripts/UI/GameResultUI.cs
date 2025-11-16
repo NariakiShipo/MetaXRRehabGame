@@ -101,8 +101,6 @@ public class GameResultUI : MonoBehaviour
         UpdateDifficulty(result.difficultyMultiplier);
         UpdateRank(result.finalScore);
         
-        // 暂停游戏
-        Time.timeScale = 0f;
     }
     
     /// <summary>
