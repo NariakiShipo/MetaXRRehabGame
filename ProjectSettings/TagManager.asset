@@ -36,6 +36,7 @@ TagManager:
   - QDSUITextInputField
   - SamplesInfoPanel
   - QDSUIToggleCheckboxRadio
+  - Scooper
   layers:
   - Default
   - TransparentFX
