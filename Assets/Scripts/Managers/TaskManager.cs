@@ -25,7 +25,7 @@ public class TaskManager : MonoBehaviour
     public UnityEvent<TaskData> OnTaskGenerated;        // 任务生成
     public UnityEvent<TaskValidationResult> OnTaskValidated; // 任务验证
     public UnityEvent<SubTask> OnSubTaskComplete;       // 子任务完成
-    public UnityEvent OnTaskFailed;                     // 任务失败
+    public UnityEvent <TaskValidationResult>  OnTaskFailed;                     // 任务失败
     
     // 当前任务
     private TaskData currentTask;
@@ -168,11 +168,6 @@ public class TaskManager : MonoBehaviour
         }
         
         OnTaskValidated?.Invoke(result);
-        
-        if (result == TaskValidationResult.Failed)
-        {
-            OnTaskFailed?.Invoke();
-        }
         
         return result;
     }

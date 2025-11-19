@@ -63,6 +63,7 @@ public class GameModeManager : MonoBehaviour
         {
             taskManager.OnTaskValidated.AddListener(OnTaskValidated);
             taskManager.OnSubTaskComplete.AddListener(OnSubTaskComplete);
+            //taskManager.OnTaskFailed.AddListener(OnTaskValidated);
         }
         
         // 初始化時隱藏時間選擇UI
@@ -77,6 +78,8 @@ public class GameModeManager : MonoBehaviour
         if (taskManager != null)
         {
             taskManager.OnTaskValidated.RemoveListener(OnTaskValidated);
+            taskManager.OnSubTaskComplete.RemoveListener(OnSubTaskComplete);
+           // taskManager.OnTaskFailed.RemoveListener(OnTaskValidated);
         }
     }
     
@@ -544,7 +547,7 @@ public class GameModeManager : MonoBehaviour
             case TaskValidationResult.Failed:
                 // 任务失败（所有模式都重新生成任务）
                 Debug.Log("[GameModeManager] 任务失败，将重新生成任务");
-                // 实际处理在 OnTaskFailed() 中进行
+                OnTaskFailed();
                 break;
                 
             case TaskValidationResult.SubTaskComplete:

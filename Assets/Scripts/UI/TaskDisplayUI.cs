@@ -87,12 +87,13 @@ public class TaskDisplayUI : MonoBehaviour
                 break;
                 
             case TaskValidationResult.Failed:
-                // 任务失败，显示错误信息
-                ShowErrorMessage("撈錯了！請重新開始");
+                // 任务失败（OnTaskFailed 會處理錯誤訊息）
+                Debug.Log("[TaskDisplayUI] 任務失敗，OnTaskFailed 將顯示錯誤訊息");
                 break;
                 
             case TaskValidationResult.Incomplete:
-                // 任务未完成，不显示任何信息
+                // 任务未完成，顯示提示信息
+                ShowErrorMessage("請撈金魚來完成任務");
                 break;
                 
             case TaskValidationResult.SubTaskComplete:
@@ -116,10 +117,11 @@ public class TaskDisplayUI : MonoBehaviour
     }
     
     /// <summary>
-    /// 任务失败时
+    /// 任务失败时顯示錯誤訊息
     /// </summary>
-    private void OnTaskFailed()
+    private void OnTaskFailed(TaskValidationResult result)
     {
+        Debug.Log($"[TaskDisplayUI] OnTaskFailed 被調用，結果：{result}");
         ShowErrorMessage("撈錯了！請重新開始");
     }
     
@@ -175,11 +177,6 @@ public class TaskDisplayUI : MonoBehaviour
         }
         
         // 显示错误面板
-        
-        
-        // 停止之前的协程（如果存在）
-        StopErrorMessageCoroutine();
-        
         // 启动新的协程来自动隐藏错误信息
         errorMessageCoroutine = StartCoroutine(ErrorMessageCoroutine());
         

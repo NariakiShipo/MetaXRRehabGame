@@ -9,6 +9,10 @@ public class ConfirmButtonHandler : MonoBehaviour
     [SerializeField] private TaskManager taskManager;
     [SerializeField] private BucketEvent bucketEvent;
     [SerializeField] private GameModeManager gameModeManager;
+    [SerializeField]private AudioSource audioSource;
+    [SerializeField]private AudioClip correctSound;
+    [SerializeField]private AudioClip incorrectSound;
+    [SerializeField]private AudioClip resetSound;
     
     private void Awake()
     {
@@ -54,27 +58,28 @@ public class ConfirmButtonHandler : MonoBehaviour
             case TaskValidationResult.Success:
                 // 任务完成，清空桶并生成新任务
                 bucketEvent.ClearBucket();
+                audioSource.PlayOneShot(correctSound);
+                Debug.Log("[ConfirmButtonHandler] 任务完成，生成新任务");
                 // GameModeManager会监听TaskValidated事件并生成新任务
                 break;
                 
             case TaskValidationResult.Failed:
-                // 任务失败，清空桶并重置任务（中高级模式）
+                // 任务失败，清空桶并重置任务
                 bucketEvent.ClearBucket();
-                if (gameModeManager != null)
-                {
-                    gameModeManager.OnTaskFailed();
-                }
+              
+                audioSource.PlayOneShot(resetSound);
+                Debug.Log("[ConfirmButtonHandler] 任務失敗，重新生成任務和魚");
                 break;
                 
             case TaskValidationResult.Incomplete:
-                // 任务未完成，不做任何操作
-                Debug.Log("[ConfirmButtonHandler] 任务未完成，继续收集鱼");
+                // 任务不完整，提示玩家继续完成任务
+                audioSource.PlayOneShot(incorrectSound);
                 break;
                 
             case TaskValidationResult.SubTaskComplete:
                 // 子任务完成，清空桶并继续下一个子任务
                 bucketEvent.ClearBucket();
-                Debug.Log("[ConfirmButtonHandler] 子任务完成，继续下一个");
+                audioSource.PlayOneShot(correctSound);
                 break;
         }
     }

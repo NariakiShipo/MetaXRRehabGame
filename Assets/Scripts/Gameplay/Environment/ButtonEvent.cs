@@ -13,6 +13,11 @@ public class ButtonEvent : MonoBehaviour
     [Tooltip("是否可以重複按下")]
     [SerializeField] private bool canRepeatPress = true;
     
+    [Tooltip("按鈕冷卻時間（秒）")]
+    [SerializeField] private float cooldownTime = 2f;
+    
+    private float lastPressTime = -999f; // 上次按下的時間
+    
     [Header("Events")]
     [Tooltip("按鈕被按下時觸發")]
     public UnityEvent onButtonPressed;
@@ -30,7 +35,12 @@ public class ButtonEvent : MonoBehaviour
     {
         if (isPressed)
         {
-            onButtonPressed?.Invoke();
+            // 檢查冷卻時間
+            if (Time.time - lastPressTime >= cooldownTime)
+            {
+                onButtonPressed?.Invoke();
+                lastPressTime = Time.time;
+            }
         }
     }
     
@@ -39,6 +49,12 @@ public class ButtonEvent : MonoBehaviour
         // 只對特定標籤的物體做出反應
         if (other.CompareTag(triggerTag))
         {
+            // 檢查冷卻時間
+            if (Time.time - lastPressTime < cooldownTime)
+            {
+                return;
+            }
+            
             // 如果不允許重複按下且已經按下，則忽略
             if (!canRepeatPress && isPressed)
             {
@@ -50,8 +66,7 @@ public class ButtonEvent : MonoBehaviour
             
             // 觸發按下事件
             onButtonPressed?.Invoke();
-            
-            Debug.Log($"[ButtonEvent] {gameObject.name} 被按下！觸發者：{other.gameObject.name}");
+            lastPressTime = Time.time;
         }
     }
     
@@ -67,8 +82,6 @@ public class ButtonEvent : MonoBehaviour
                 
                 // 觸發釋放事件
                 onButtonReleased?.Invoke();
-                
-                Debug.Log($"[ButtonEvent] {gameObject.name} 被釋放！");
             }
         }
     }
@@ -79,8 +92,6 @@ public class ButtonEvent : MonoBehaviour
     public void ResetButton()
     {
         isPressed = false;
-        
-        Debug.Log($"[ButtonEvent] {gameObject.name} 已重置");
     }
     
     /// <summary>
@@ -88,12 +99,34 @@ public class ButtonEvent : MonoBehaviour
     /// </summary>
     public void PressButton()
     {
+        // 檢查冷卻時間
+        if (Time.time - lastPressTime < cooldownTime)
+        {
+            return;
+        }
+        
         if (!isPressed || canRepeatPress)
         {
             isPressed = true;
             onButtonPressed?.Invoke();
-            
-            Debug.Log($"[ButtonEvent] {gameObject.name} 被手動按下");
+            lastPressTime = Time.time;
         }
+    }
+    
+    /// <summary>
+    /// 檢查按鈕是否在冷卻中
+    /// </summary>
+    public bool IsOnCooldown()
+    {
+        return Time.time - lastPressTime < cooldownTime;
+    }
+    
+    /// <summary>
+    /// 獲取剩餘冷卻時間
+    /// </summary>
+    public float GetRemainingCooldown()
+    {
+        float remaining = cooldownTime - (Time.time - lastPressTime);
+        return Mathf.Max(0f, remaining);
     }
 }
