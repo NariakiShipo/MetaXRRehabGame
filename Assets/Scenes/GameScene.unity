@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 03902d0b450add74fa144e9510fd0f85, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -9478,123 +9478,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 649989797}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &900339990
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 900339993}
-  - component: {fileID: 900339992}
-  - component: {fileID: 900339991}
-  m_Layer: 0
-  m_Name: '[BuildingBlock] Passthrough'
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &900339991
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900339990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 555725d48e9051a4bb6b8d45178c2fdd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  projectionSurfaceType: 0
-  overlayType: 1
-  compositionDepth: 0
-  hidden: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  passthroughLayerResumed:
-    m_PersistentCalls:
-      m_Calls: []
-  colorMapEditorType_: 0
-  colorMapEditorGradient:
-    serializedVersion: 2
-    key0: {r: 0, g: 0, b: 0, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 0, g: 0, b: 0, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 65535
-    ctime2: 0
-    ctime3: 0
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: -1
-    m_NumColorKeys: 2
-    m_NumAlphaKeys: 2
-  colorMapEditorContrast: 0
-  colorMapEditorBrightness: 0
-  colorMapEditorPosterize: 0
-  colorMapEditorSaturation: 0
-  _colorLutSourceTexture: {fileID: 0}
-  _colorLutTargetTexture: {fileID: 0}
-  _lutWeight: 1
-  _flipLutY: 1
-  serializedSurfaceGeometry: []
-  textureOpacity_: 1
-  edgeRenderingEnabled_: 0
-  edgeColor_: {r: 1, g: 1, b: 1, a: 1}
-  colorMapType: 0
---- !u!114 &900339992
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900339990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockId: f0540b20-dfd6-420e-b20d-c270f88dc77e
-  instanceId: 58c890d4-d274-4234-a3af-b8b40971f25e
-  version: 1
-  installationRoutineCheckpoint:
-    _installationRoutineId: 
-    _installationVariants: []
---- !u!4 &900339993
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900339990}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &910491181
 GameObject:
   m_ObjectHideFlags: 0
@@ -12445,11 +12328,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5a58239e57ef634499869b1e6f88c3dc, type: 3}
---- !u!1 &1329344884 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 9110921007804979560, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
-  m_PrefabInstance: {fileID: 1515550779}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1329344885 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2564833305750112515, guid: edf436b358eab2c4cab0b8794d0dc591, type: 3}
@@ -15841,7 +15719,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b164cc97a0671ab48bf95a883a920ce4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scoopNet: {fileID: 1329344884}
+  scoopNet: {fileID: 0}
   timerText: {fileID: 1253674395}
   scoreManager: {fileID: 1761142183}
   score: 0
@@ -17311,7 +17189,7 @@ Camera:
   m_GameObject: {fileID: 1913015812}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -19062,4 +18940,3 @@ SceneRoots:
   - {fileID: 1626556764}
   - {fileID: 1761142177}
   - {fileID: 1757611064}
-  - {fileID: 900339993}
