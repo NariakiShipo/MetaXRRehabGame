@@ -8,7 +8,6 @@ public class ScoopFish : MonoBehaviour
 
     private FishForwardMovement hoveredFish; // Lantern near pole
     private FishForwardMovement heldFish;    // Lantern currently held
-    private bool isHolding = false;
 
     [Header("Controller Settings")]
     public InputActionProperty grabAction; // Assign grip/trigger
@@ -47,7 +46,7 @@ public class ScoopFish : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("redFish") || collision.gameObject.CompareTag("blueFish") || collision.gameObject.CompareTag("greenFish"))
+        if (collision.gameObject.CompareTag("redFish") || collision.gameObject.CompareTag("grayFish") || collision.gameObject.CompareTag("greenFish"))
             hoveredFish = collision.gameObject.GetComponent<FishForwardMovement>();
     }
 
@@ -66,7 +65,6 @@ public class ScoopFish : MonoBehaviour
         fish.SnapTo(snapPoint);
 
         snappedFish = fish;
-        isHolding = true;
         fish.selected = true;
 
         hoveredFish = null; // ✅ prevent re-snapping
@@ -77,7 +75,6 @@ public class ScoopFish : MonoBehaviour
     {
         if (fish == null) return;
 
-        isHolding = false;
         snappedFish = null;
         fish.selected = false;
 

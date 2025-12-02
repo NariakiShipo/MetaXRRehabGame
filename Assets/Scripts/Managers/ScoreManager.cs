@@ -22,9 +22,6 @@ public class ScoreManager : MonoBehaviour
     [Tooltip("完成子任务的分数（高级模式）")]
     [SerializeField] private int subTaskScore = 50;
     
-    [Tooltip("时间奖励：剩余每秒获得的分数")]
-    [SerializeField] private int timeBonus = 1;
-    
     [Header("事件")]
     [Tooltip("分数变化时触发")]
     public UnityEvent<int> OnScoreChanged;
@@ -120,18 +117,18 @@ public class ScoreManager : MonoBehaviour
     /// <summary>
     /// 计算时间奖励并结束游戏
     /// </summary>
-    public void EndGame(float remainingTime)
+    public void EndGame(float totalTimeSpent)
     {
         if (isGameEnded) return;
         
         isGameEnded = true;
         
         // 计算时间奖励
-        int timeBonusScore = Mathf.RoundToInt(remainingTime * timeBonus);
-        currentScore += timeBonusScore;
+        //int timeBonusScore = Mathf.RoundToInt(remainingTime * timeBonus);
+        //currentScore += timeBonusScore;
         
         Debug.Log($"[ScoreManager] 游戏结束！");
-        Debug.Log($"[ScoreManager] 时间奖励: {timeBonusScore} 分 (剩余 {remainingTime:F1} 秒)");
+        Debug.Log($"[ScoreManager] 總花費 {totalTimeSpent:F1} 秒");
         Debug.Log($"[ScoreManager] 最终得分: {currentScore}");
         
         // 创建游戏结果
@@ -139,8 +136,7 @@ public class ScoreManager : MonoBehaviour
         {
             finalScore = currentScore,
             completedTasks = completedTasks,
-            timeBonusScore = timeBonusScore,
-            remainingTime = remainingTime,
+            totalTimeSpent = totalTimeSpent,
             difficultyMultiplier = currentMultiplier
         };
         
@@ -195,7 +191,6 @@ public class GameResult
 {
     public int finalScore;              // 最终得分
     public int completedTasks;          // 完成的任务数量
-    public int timeBonusScore;          // 时间奖励分数
-    public float remainingTime;         // 剩余时间
+    public float totalTimeSpent;         // 總花費时间
     public float difficultyMultiplier;  // 难度倍率
 }

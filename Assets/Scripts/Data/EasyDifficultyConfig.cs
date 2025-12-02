@@ -1,49 +1,49 @@
 using UnityEngine;
 
 /// <summary>
-/// 简单难度配置 - 只要求数量认知，不限颜色
+/// 簡單難度配置 - 只要求數量認知，不限顏色
 /// </summary>
 [System.Serializable]
 public class EasyDifficultyConfig : DifficultyConfig
 {
-    [Header("简单模式特殊设置")]
-    [Tooltip("是否只生成单一颜色的鱼")]
+    [Header("簡單模式特殊設定")]
+    [Tooltip("是否只生成單一顏色的魚")]
     public bool useSingleColor = true;
     
-    [Tooltip("任务鱼数量范围")]
+    [Tooltip("任務魚數量範圍")]
     public int minFishCount = 1;
     public int maxFishCount = 3;
     
     public EasyDifficultyConfig()
     {
-        difficultyName = "简单";
+        SetDifficultyName("簡單");
         difficultyIndex = 0;
         taskType = TaskType.CountOnly;
-        timeLimit = 180f;  // 3分钟
+        timeLimit = 180f;  // 3分鐘
         scoreMultiplier = 1.0f;
         minFishPerColor = 5;
     }
     
     /// <summary>
-    /// 配置鱼生成管理器 - 简单模式只生成一种颜色
+    /// 配置魚生成管理器 - 簡單模式只產生一種顏色
     /// </summary>
     public override void ConfigureFishSpawnManager(FishSpawnManager fishSpawnManager)
     {
         if (fishSpawnManager == null) return;
         
         fishSpawnManager.SetSpawnMode(difficultyIndex);
-        Debug.Log($"[EasyDifficulty] 配置鱼生成：单一颜色模式");
+        Debug.Log($"[EasyDifficulty] 配置魚生成：單一顏色模式");
     }
     
     /// <summary>
-    /// 配置任务管理器 - 简单模式只要求数量
+    /// 配置任務管理器 - 簡單模式只要求數量
     /// </summary>
     public override void ConfigureTaskManager(TaskManager taskManager)
     {
         if (taskManager == null) return;
         
-        // 可以在这里设置简单模式特有的任务参数
-        Debug.Log($"[EasyDifficulty] 配置任务：数量认知 ({minFishCount}-{maxFishCount}条)");
+        // 可以在這裡設定簡單模式特有的任務參數
+        Debug.Log($"[EasyDifficulty] 設定任務：數量認知 ({minFishCount}-{maxFishCount}條)");
     }
     
     public override string GetDescription()

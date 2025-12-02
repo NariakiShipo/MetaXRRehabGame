@@ -155,7 +155,16 @@ public class GameModeManager : MonoBehaviour
     /// <summary>
     /// 3分鐘按鈕按下時調用（180秒）
     /// </summary>
-    public void OnTime3MinButtonPressed()
+    public void OnTimeOneMinButtonPressed()
+    {
+        selectedTimeLimit = 60f;
+        StartGameWithSelectedSettings();
+    }
+
+    /// <summary>
+    /// 3分鐘按鈕按下時調用（180秒）
+    /// </summary>
+    public void OnTimeThreeMinButtonPressed()
     {
         selectedTimeLimit = 180f;
         StartGameWithSelectedSettings();
@@ -164,7 +173,7 @@ public class GameModeManager : MonoBehaviour
     /// <summary>
     /// 5分鐘按鈕按下時調用（300秒）
     /// </summary>
-    public void OnTime5MinButtonPressed()
+    public void OnTimeFiveMinButtonPressed()
     {
         selectedTimeLimit = 300f;
         StartGameWithSelectedSettings();
@@ -173,7 +182,7 @@ public class GameModeManager : MonoBehaviour
     /// <summary>
     /// 10分鐘按鈕按下時調用（600秒）
     /// </summary>
-    public void OnTime10MinButtonPressed()
+    public void OnTimeTenMinButtonPressed()
     {
         selectedTimeLimit = 600f;
         StartGameWithSelectedSettings();

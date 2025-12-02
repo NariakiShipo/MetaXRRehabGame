@@ -34,7 +34,12 @@ public class FishForwardMovement : MonoBehaviour
     private Vector3 targetDirection;
     private float timeToChangeDirection;
     private Animator animator;
-
+    public GameObject bucketReturnPoint;
+        // 生成時注入 bucketReturnPoint
+        public void SetBucketReturnPoint(GameObject point)
+        {
+            bucketReturnPoint = point;
+        }
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
@@ -131,6 +136,12 @@ public class FishForwardMovement : MonoBehaviour
     {
         Vector3 newPosition = transform.position;
         Quaternion newRotation = transform.rotation;
+        if(isInBucket){
+            Debug.Log("Fish is in bucket , return to the bucket");
+            newPosition = bucketReturnPoint.transform.position;
+            newRotation = bucketReturnPoint.transform.rotation;
+        }
+        
         selected = false;
         isInBucket = false;
         arrivedAtBucketPoint = false;
@@ -159,4 +170,12 @@ public class FishForwardMovement : MonoBehaviour
         transform.rotation = targetRot;
     }
 
+    void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.CompareTag("Bucket"))
+        {
+            isInBucket = true;
+            arrivedAtBucketPoint = true;
+        }
+    }
 }

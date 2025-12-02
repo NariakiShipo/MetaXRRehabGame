@@ -7,7 +7,7 @@ using UnityEngine;
 public abstract class DifficultyConfig
 {
     [Header("基础设置")]
-    public string difficultyName;
+    public string difficultyName{private set; get;}
     public int difficultyIndex;
     public TaskType taskType;
     
@@ -30,6 +30,7 @@ public abstract class DifficultyConfig
     /// </summary>
     public string GetDifficultyName() => difficultyName;
     
+    public void SetDifficultyName(string displayName) => difficultyName = displayName;
     /// <summary>
     /// 获取任务类型
     /// </summary>

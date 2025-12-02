@@ -5,6 +5,9 @@ using UnityEngine.UIElements;
 
 public class FishSpawnManager : MonoBehaviour
 {
+    [Header("Bucket Settings")]
+    [SerializeField] private GameObject bucketReturnPoint;
+    
     [Header("Spawn Settings")]
     public GameObject[] fishPrefab;
     
@@ -35,7 +38,7 @@ public class FishSpawnManager : MonoBehaviour
     [SerializeField] private int minFishPerColor = 5;
     
     private List<Fish> fish = new List<Fish>();
-    private string[] fishname = {"redFish", "blueFish", "greenFish"};
+    private string[] fishname = {"redFish", "grayFish", "greenFish"};
     private List<Vector3> spawnedPositions = new List<Vector3>();
     private bool isDataInitialized = false; // 標記 Fish 資料是否已初始化
     
@@ -227,7 +230,14 @@ public class FishSpawnManager : MonoBehaviour
                     fishDataComponent = spawnedFish.AddComponent<FishData>();
                 }
                 fishDataComponent.SetPrefabName(fishData.color);
-                
+
+                // 注入 bucketReturnPoint
+                FishForwardMovement movement = spawnedFish.GetComponent<FishForwardMovement>();
+                if (movement != null && bucketReturnPoint != null)
+                {
+                    movement.SetBucketReturnPoint(bucketReturnPoint);
+                }
+
                 spawnedFishObjects.Add(spawnedFish);
                 
                 // 初始化 Rigidbody

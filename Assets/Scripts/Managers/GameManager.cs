@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     
 
     private float timer = 0f;
+    private float timerSpent;
     private bool isEnd = false;
     public int score = 0;
     
@@ -40,15 +41,17 @@ public class GameManager : MonoBehaviour
             // 觸發遊戲結束並計算分數
             if (scoreManager != null)
             {
-                scoreManager.EndGame(0f); // 時間用完，沒有剩餘時間獎勵
+                scoreManager.EndGame(timerSpent); // 時間用完，傳入本次遊玩時間
             }
             timer = 0f; // 確保時間不會變成負數
+            timerText.text = "Time: " + "00" + ":" + "00";
         }
     }
 
     public void SetTime(int index, float timeLimit)
     {
         timer = timeLimit;
+        timerSpent = timeLimit;
         isEnd = false; // 重置結束標記
     }
     

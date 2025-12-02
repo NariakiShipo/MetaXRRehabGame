@@ -15,8 +15,8 @@ GameObject:
   - component: {fileID: 6826039173119230797}
   - component: {fileID: -7586240380905229366}
   m_Layer: 0
-  m_Name: BlueFish
-  m_TagString: blueFish
+  m_Name: GrayFish
+  m_TagString: grayFish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -168,6 +168,7 @@ MonoBehaviour:
   initialParent: {fileID: 0}
   initialScale: {x: 0, y: 0, z: 0}
   returnSpeed: 2
+  bucketReturnPoint: {fileID: 0}
 --- !u!1 &8053996359199073946
 GameObject:
   m_ObjectHideFlags: 0

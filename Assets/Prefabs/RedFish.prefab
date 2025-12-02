@@ -265,6 +265,7 @@ MonoBehaviour:
   initialParent: {fileID: 0}
   initialScale: {x: 0, y: 0, z: 0}
   returnSpeed: 2
+  bucketReturnPoint: {fileID: 0}
 --- !u!1001 &8226904474043594255
 PrefabInstance:
   m_ObjectHideFlags: 0

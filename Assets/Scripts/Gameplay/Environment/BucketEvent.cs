@@ -22,6 +22,7 @@ public class BucketEvent : MonoBehaviour
         fishInBucket["redFish"] = 0;
         fishInBucket["blueFish"] = 0;
         fishInBucket["greenFish"] = 0;
+        fishInBucket["grayFish"] = 0;
     }
 
     private void Start()
@@ -122,7 +123,7 @@ public class BucketEvent : MonoBehaviour
     private string GetFishTag(GameObject obj)
     {
         if (obj.CompareTag("redFish")) return "redFish";
-        if (obj.CompareTag("blueFish")) return "blueFish";
+        if (obj.CompareTag("grayFish")) return "grayFish";
         if (obj.CompareTag("greenFish")) return "greenFish";
         return null;
     }

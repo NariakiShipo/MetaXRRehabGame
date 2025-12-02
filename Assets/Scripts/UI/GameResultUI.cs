@@ -30,6 +30,9 @@ public class GameResultUI : MonoBehaviour
     [Tooltip("ScoreManager引用")]
     [SerializeField] private ScoreManager scoreManager;
     
+    [SerializeField]DifficultyManager difficultyManager;
+    //DifficultyConfig currentDifficulty;
+
     [Header("评价设置")]
     [Tooltip("S级评价分数线")]
     [SerializeField] private int sRankThreshold = 1000;
@@ -42,6 +45,7 @@ public class GameResultUI : MonoBehaviour
     
     [Tooltip("C级评价分数线")]
     [SerializeField] private int cRankThreshold = 250;
+
     
     void Awake()
     {
@@ -97,7 +101,7 @@ public class GameResultUI : MonoBehaviour
         // 更新各项统计
         UpdateFinalScore(result.finalScore);
         UpdateCompletedTasks(result.completedTasks);
-        UpdateTimeBonus(result.timeBonusScore, result.remainingTime);
+        UpdateTimeBonus(result.totalTimeSpent);
         UpdateDifficulty(result.difficultyMultiplier);
         UpdateRank(result.finalScore);
         
@@ -128,13 +132,13 @@ public class GameResultUI : MonoBehaviour
     /// <summary>
     /// 更新时间奖励
     /// </summary>
-    private void UpdateTimeBonus(int bonus, float remainingTime)
+        private void UpdateTimeBonus(float totalTime)
     {
         if (timeBonusText != null)
         {
-            int minutes = Mathf.FloorToInt(remainingTime / 60f);
-            int seconds = Mathf.FloorToInt(remainingTime % 60f);
-            timeBonusText.text = $"時間獎勵: {bonus} 分 (剩餘 {minutes:00}:{seconds:00})";
+                int minutes = Mathf.FloorToInt(totalTime / 60f);
+                int seconds = Mathf.FloorToInt(totalTime % 60f);
+                timeBonusText.text = $"本次遊玩時間: {minutes:00}:{seconds:00}";
         }
     }
     
@@ -145,8 +149,8 @@ public class GameResultUI : MonoBehaviour
     {
         if (difficultyText != null)
         {
-            string difficultyName = GetDifficultyName(multiplier);
-            difficultyText.text = $"難度: {difficultyName} (x{multiplier:F1})";
+            string difficultyName = difficultyManager.GetCurrentDifficulty().GetDifficultyName();
+            difficultyText.text = $"難度: {difficultyName}";
         }
     }
     
@@ -161,17 +165,6 @@ public class GameResultUI : MonoBehaviour
             string color = GetRankColor(rank);
             rankText.text = $"<color={color}>評價: {rank}</color>";
         }
-    }
-    
-    /// <summary>
-    /// 获取难度名称
-    /// </summary>
-    private string GetDifficultyName(float multiplier)
-    {
-        if (Mathf.Approximately(multiplier, 1.0f)) return "簡單";
-        if (Mathf.Approximately(multiplier, 1.5f)) return "普通";
-        if (Mathf.Approximately(multiplier, 2.0f)) return "困難";
-        return "未知";
     }
     
     /// <summary>

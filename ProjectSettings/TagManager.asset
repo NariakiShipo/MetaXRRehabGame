@@ -18,7 +18,6 @@ TagManager:
   - Wall
   - Fish
   - Bucket
-  - blueFish
   - redFish
   - greenFish
   - Tank
@@ -37,6 +36,7 @@ TagManager:
   - SamplesInfoPanel
   - QDSUIToggleCheckboxRadio
   - Scooper
+  - grayFish
   layers:
   - Default
   - TransparentFX
