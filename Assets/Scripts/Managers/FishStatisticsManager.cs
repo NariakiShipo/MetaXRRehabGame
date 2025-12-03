@@ -9,8 +9,8 @@ using System.Collections.Generic;
 public class FishStatisticsManager : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private FishSpawnManager fishSpawnManager;
-    [SerializeField] private BucketEvent bucketEvent;
+    private FishSpawnManager fishSpawnManager;
+    private BucketEvent bucketEvent;
     
     [Header("UI Elements")]
     [SerializeField] private TMP_Text overallProgressText;
@@ -28,6 +28,10 @@ public class FishStatisticsManager : MonoBehaviour
 
     private void Start()
     {
+        // 通过 ServiceLocator 获取依赖
+        fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
+        bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
+        
         if (fishSpawnManager != null)
         {
             fishes = fishSpawnManager.GetFish();

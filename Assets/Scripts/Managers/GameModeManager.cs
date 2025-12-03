@@ -4,20 +4,12 @@ using UnityEngine.Events;
 public class GameModeManager : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("GameManager 腳本引用")]
-    [SerializeField] private GameManager gameManager;
-    
-    [Tooltip("FishSpawnManager 腳本引用")]
-    [SerializeField] private FishSpawnManager fishSpawnManager;
-    
-    [Tooltip("TaskManager 腳本引用")]
-    [SerializeField] private TaskManager taskManager;
-    
-    [Tooltip("ScoreManager 腳本引用")]
-    [SerializeField] private ScoreManager scoreManager;
-    
-    [Tooltip("DifficultyManager 難度管理器引用")]
-    [SerializeField] private DifficultyManager difficultyManager;
+    // 已改用 ServiceLocator，移除 SerializeField 依賴
+    private GameManager gameManager;
+    private FishSpawnManager fishSpawnManager;
+    private TaskManager taskManager;
+    private ScoreManager scoreManager;
+    private DifficultyManager difficultyManager;
     
     [Header("UI References")]
     [Tooltip("難度選擇按鈕的父物體（選擇後會隱藏）")]
@@ -40,22 +32,30 @@ public class GameModeManager : MonoBehaviour
         // 遊戲開始前先暫停其他系統
         InitializeGameSystems(false);
         
-        // 自动查找DifficultyManager
+        // 使用 ServiceLocator 獲取服務
+        if (gameManager == null)
+        {
+            gameManager = ServiceLocator.Instance.Get<GameManager>();
+        }
+        
         if (difficultyManager == null)
         {
-            difficultyManager = Object.FindFirstObjectByType<DifficultyManager>();
+            difficultyManager = ServiceLocator.Instance.Get<DifficultyManager>();
         }
         
-        // 自动查找TaskManager
         if (taskManager == null)
         {
-            taskManager = Object.FindFirstObjectByType<TaskManager>();
+            taskManager = ServiceLocator.Instance.Get<TaskManager>();
         }
         
-        // 自动查找ScoreManager
         if (scoreManager == null)
         {
-            scoreManager = Object.FindFirstObjectByType<ScoreManager>();
+            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
+        }
+        
+        if (fishSpawnManager == null)
+        {
+            fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
         }
         
         // 订阅任务验证事件
@@ -396,8 +396,8 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     private void RegenerateFish()
     {
-        // 先清空桶中的鱼
-        BucketEvent bucketEvent = Object.FindFirstObjectByType<BucketEvent>();
+        // 使用 ServiceLocator 獲取 BucketEvent
+        BucketEvent bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
         if (bucketEvent != null)
         {
             bucketEvent.ClearBucket();

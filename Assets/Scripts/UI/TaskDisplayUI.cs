@@ -15,13 +15,15 @@ public class TaskDisplayUI : MonoBehaviour
     [Header("错误信息配置")]
     [SerializeField] private float errorMessageDuration = 2f;       // 错误信息显示时长
     
-    [SerializeField]private TaskManager taskManager;
+    private TaskManager taskManager;
     
     // 用于跟踪当前运行的协程
     private Coroutine errorMessageCoroutine = null;
     
     private void Awake()
     {   
+        taskManager = ServiceLocator.Instance.Get<TaskManager>();
+        
         if (taskManager == null)
         {
             Debug.LogError("[TaskDisplayUI] 找不到TaskManager!");

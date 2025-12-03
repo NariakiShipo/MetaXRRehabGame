@@ -35,7 +35,7 @@ public class TaskSystemDiagnostic : MonoBehaviour
     {
         Debug.Log("--- 检查 TaskManager ---");
         
-        TaskManager taskManager = Object.FindFirstObjectByType<TaskManager>();
+        TaskManager taskManager = ServiceLocator.Instance.Get<TaskManager>();
         
         if (taskManager == null)
         {
@@ -52,7 +52,7 @@ public class TaskSystemDiagnostic : MonoBehaviour
     {
         Debug.Log("--- 检查 TaskDisplayUI ---");
         
-        TaskDisplayUI taskDisplayUI = Object.FindFirstObjectByType<TaskDisplayUI>();
+        TaskDisplayUI taskDisplayUI = ServiceLocator.Instance.Get<TaskDisplayUI>();
         
         if (taskDisplayUI == null)
         {
@@ -86,7 +86,7 @@ public class TaskSystemDiagnostic : MonoBehaviour
     {
         Debug.Log("--- 检查 GameModeManager ---");
         
-        GameModeManager gameModeManager = Object.FindFirstObjectByType<GameModeManager>();
+        GameModeManager gameModeManager = ServiceLocator.Instance.Get<GameModeManager>();
         
         if (gameModeManager == null)
         {
@@ -103,7 +103,7 @@ public class TaskSystemDiagnostic : MonoBehaviour
     {
         Debug.Log("--- 检查 FishSpawnManager ---");
         
-        FishSpawnManager fishSpawnManager = Object.FindFirstObjectByType<FishSpawnManager>();
+        FishSpawnManager fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
         
         if (fishSpawnManager == null)
         {
@@ -120,7 +120,7 @@ public class TaskSystemDiagnostic : MonoBehaviour
     {
         Debug.Log("--- 检查 ConfirmButton ---");
         
-        ConfirmButtonHandler confirmButton = Object.FindFirstObjectByType<ConfirmButtonHandler>();
+        ConfirmButtonHandler confirmButton = ServiceLocator.Instance.Get<ConfirmButtonHandler>();
         
         if (confirmButton == null)
         {

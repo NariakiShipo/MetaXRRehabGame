@@ -1,13 +1,10 @@
 using UnityEngine;
 
-/// <summary>
-/// 难度配置基类 - 定义所有难度模式的共同接口
-/// </summary>
 [System.Serializable]
 public abstract class DifficultyConfig
 {
     [Header("基础设置")]
-    public string difficultyName{private set; get;}
+    public string difficultyName { get; private set; }
     public int difficultyIndex;
     public TaskType taskType;
     
@@ -20,55 +17,41 @@ public abstract class DifficultyConfig
     [Header("鱼生成设置")]
     public int minFishPerColor = 5;
     
-    /// <summary>
-    /// 获取难度索引
-    /// </summary>
-    public int GetDifficultyIndex() => difficultyIndex;
+    // Remove direct dependency on Manager
+    // Change to return configuration information
     
-    /// <summary>
-    /// 获取难度名称
-    /// </summary>
+    public virtual FishSpawnConfig GetFishSpawnConfig()
+    {
+        return new FishSpawnConfig
+        {
+            MinFishPerColor = minFishPerColor,
+            EnabledColors = GetEnabledColors()
+        };
+    }
+    
+    public virtual TaskConfig GetTaskConfig()
+    {
+        return new TaskConfig
+        {
+            TaskType = taskType,
+            MinFishPerColor = minFishPerColor
+        };
+    }
+    
+    protected abstract string[] GetEnabledColors();
+    
+    // Abstract method for description
+    public abstract string GetDescription();
+    
+    // Getter methods for accessing config properties
     public string GetDifficultyName() => difficultyName;
-    
-    public void SetDifficultyName(string displayName) => difficultyName = displayName;
-    /// <summary>
-    /// 获取任务类型
-    /// </summary>
+    public int GetDifficultyIndex() => difficultyIndex;
     public TaskType GetTaskType() => taskType;
-    
-    /// <summary>
-    /// 获取时间限制
-    /// </summary>
     public float GetTimeLimit() => timeLimit;
-    
-    /// <summary>
-    /// 设置时间限制（允许玩家选择）
-    /// </summary>
-    public void SetTimeLimit(float newTimeLimit)
-    {
-        timeLimit = newTimeLimit;
-    }
-    
-    /// <summary>
-    /// 获取分数倍率
-    /// </summary>
     public float GetScoreMultiplier() => scoreMultiplier;
+    public int GetMinFishPerColor() => minFishPerColor;
     
-    /// <summary>
-    /// 配置鱼生成管理器
-    /// </summary>
-    public abstract void ConfigureFishSpawnManager(FishSpawnManager fishSpawnManager);
-    
-    /// <summary>
-    /// 配置任务管理器
-    /// </summary>
-    public abstract void ConfigureTaskManager(TaskManager taskManager);
-    
-    /// <summary>
-    /// 获取难度描述
-    /// </summary>
-    public virtual string GetDescription()
-    {
-        return $"{difficultyName} - {timeLimit}秒 - {scoreMultiplier}x分数";
-    }
+    // Setter methods for customization
+    protected void SetDifficultyName(string name) => difficultyName = name;
+    public void SetTimeLimit(float time) => timeLimit = time;
 }

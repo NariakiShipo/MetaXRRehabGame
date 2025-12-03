@@ -40,10 +40,10 @@ public class GrabbableFish : MonoBehaviour
 
     private void Start()
     {
-        // 嘗試自動找到 Generator
+        // 使用 ServiceLocator 獲取 FishSpawnManager
         if (fishSpawnManager == null)
         {
-            fishSpawnManager = FindFirstObjectByType<FishSpawnManager>();
+            fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
         }
     }
 

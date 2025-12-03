@@ -373,6 +373,27 @@ public class TaskManager : MonoBehaviour
     }
     
     /// <summary>
+    /// 应用任务配置 - 使用数据驱动方式
+    /// </summary>
+    public void ApplyTaskConfig(TaskConfig config)
+    {
+        if (config.MinFishPerColor <= 0)
+        {
+            Debug.LogError("MinFishPerColor 必須大於 0");
+            return;
+        }
+       
+        // 设置最小鱼数量（可用于任务生成逻辑）
+        if (config.MinFishPerColor > 0)
+        {
+            minFishCount = Mathf.Max(1, config.MinFishPerColor / 2);
+            maxFishCount = config.MinFishPerColor;
+        }
+        
+        Debug.Log($"[TaskManager] 应用配置：任务类型 {config.TaskType}，鱼数量范围 {minFishCount}-{maxFishCount}");
+    }
+    
+    /// <summary>
     /// 重置任务
     /// </summary>
     public void ResetTask()

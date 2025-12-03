@@ -49,10 +49,16 @@ public class GameResultUI : MonoBehaviour
     
     void Awake()
     {
-        // 自动查找ScoreManager
+        // 使用 ServiceLocator 獲取 ScoreManager
         if (scoreManager == null)
         {
-            scoreManager = Object.FindFirstObjectByType<ScoreManager>();
+            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
+        }
+        
+        // 使用 ServiceLocator 獲取 DifficultyManager
+        if (difficultyManager == null)
+        {
+            difficultyManager = ServiceLocator.Instance.Get<DifficultyManager>();
         }
         
         // 初始隐藏结算面板

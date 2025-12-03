@@ -7,14 +7,15 @@ using System;
 public class DifficultyManager : MonoBehaviour
 {
     [Header("难度配置")]
-    [SerializeField] private EasyDifficultyConfig easyConfig;
-    [SerializeField] private NormalDifficultyConfig normalConfig;
-    [SerializeField] private HardDifficultyConfig hardConfig;
+    [SerializeField] private EasyDifficultyConfig easyDifficulty;
+    [SerializeField] private NormalDifficultyConfig normalDifficulty;
+    [SerializeField] private HardDifficultyConfig hardDifficulty;
     
     [Header("依赖引用")]
-    [SerializeField] private FishSpawnManager fishSpawnManager;
-    [SerializeField] private TaskManager taskManager;
-    [SerializeField] private ScoreManager scoreManager;
+    // 已改用 ServiceLocator，移除 SerializeField 依賴
+    private FishSpawnManager fishSpawnManager;
+    private TaskManager taskManager;
+    private ScoreManager scoreManager;
     
     // 当前选择的难度配置
     private DifficultyConfig currentDifficulty;
@@ -43,6 +44,11 @@ public class DifficultyManager : MonoBehaviour
     
     private void Start()
     {
+        // 通过 ServiceLocator 获取依赖
+        fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
+        taskManager = ServiceLocator.Instance.Get<TaskManager>();
+        scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
+        
         // 验证依赖
         ValidateDependencies();
     }
@@ -56,14 +62,14 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     private void InitializeConfigs()
     {
-        if (easyConfig == null)
-            easyConfig = new EasyDifficultyConfig();
+        if (easyDifficulty == null)
+            easyDifficulty = new EasyDifficultyConfig();
             
-        if (normalConfig == null)
-            normalConfig = new NormalDifficultyConfig();
+        if (normalDifficulty == null)
+            normalDifficulty = new NormalDifficultyConfig();
             
-        if (hardConfig == null)
-            hardConfig = new HardDifficultyConfig();
+        if (hardDifficulty == null)
+            hardDifficulty = new HardDifficultyConfig();
             
         Debug.Log("[DifficultyManager] 难度配置初始化完成");
     }
@@ -92,7 +98,8 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public void SetEasyDifficulty()
     {
-        SetDifficulty(easyConfig);
+        currentDifficulty = easyDifficulty;
+        ApplyDifficulty();
     }
     
     /// <summary>
@@ -100,7 +107,8 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public void SetNormalDifficulty()
     {
-        SetDifficulty(normalConfig);
+        currentDifficulty = normalDifficulty;
+        ApplyDifficulty();
     }
     
     /// <summary>
@@ -108,9 +116,18 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public void SetHardDifficulty()
     {
-        SetDifficulty(hardConfig);
+        currentDifficulty = hardDifficulty;
+        ApplyDifficulty();
     }
     
+    private void ApplyDifficulty()
+    {
+        // Publish events instead of configuring directly
+        EventBus.Instance.Publish(new DifficultyChangedEvent 
+        { 
+            NewDifficulty = currentDifficulty 
+        });
+    }
     /// <summary>
     /// 根据索引设置难度
     /// </summary>
@@ -166,16 +183,20 @@ public class DifficultyManager : MonoBehaviour
     {
         if (currentDifficulty == null) return;
         
+        // 获取配置数据
+        FishSpawnConfig fishConfig = currentDifficulty.GetFishSpawnConfig();
+        TaskConfig taskConfig = currentDifficulty.GetTaskConfig();
+        
         // 配置鱼生成管理器
         if (fishSpawnManager != null)
         {
-            currentDifficulty.ConfigureFishSpawnManager(fishSpawnManager);
+            fishSpawnManager.ApplySpawnConfig(fishConfig);
         }
         
         // 配置任务管理器
         if (taskManager != null)
         {
-            currentDifficulty.ConfigureTaskManager(taskManager);
+            taskManager.ApplyTaskConfig(taskConfig);
         }
         
         // 配置分数管理器
@@ -234,7 +255,7 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public EasyDifficultyConfig GetEasyConfig()
     {
-        return easyConfig;
+        return easyDifficulty;
     }
     
     /// <summary>
@@ -242,7 +263,7 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public NormalDifficultyConfig GetNormalConfig()
     {
-        return normalConfig;
+        return normalDifficulty;
     }
     
     /// <summary>
@@ -250,7 +271,7 @@ public class DifficultyManager : MonoBehaviour
     /// </summary>
     public HardDifficultyConfig GetHardConfig()
     {
-        return hardConfig;
+        return hardDifficulty;
     }
     
     /// <summary>

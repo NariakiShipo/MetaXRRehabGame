@@ -37,10 +37,10 @@ public class ScoreDisplayUI : MonoBehaviour
     
     void Awake()
     {
-        // 自动查找ScoreManager
+        // 使用 ServiceLocator 獲取 ScoreManager
         if (scoreManager == null)
         {
-            scoreManager = Object.FindFirstObjectByType<ScoreManager>();
+            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
         }
     }
     

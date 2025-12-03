@@ -11,15 +11,15 @@ public class RetryButtonHandler : MonoBehaviour
     
     private void Awake()
     {
-        // 自动查找引用
+        // 使用 ServiceLocator 獲取服務
         if (taskManager == null)
         {
-            taskManager = Object.FindFirstObjectByType<TaskManager>();
+            taskManager = ServiceLocator.Instance.Get<TaskManager>();
         }
         
         if (bucketEvent == null)
         {
-            bucketEvent = Object.FindFirstObjectByType<BucketEvent>();
+            bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
         }
     }
     

@@ -17,10 +17,10 @@ public class GameManager : MonoBehaviour
     {
         scoopNet.SetActive(true);
         
-        // 自動查找 ScoreManager
+        // 使用 ServiceLocator 獲取 ScoreManager
         if (scoreManager == null)
         {
-            scoreManager = Object.FindFirstObjectByType<ScoreManager>();
+            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
         }
     }
     

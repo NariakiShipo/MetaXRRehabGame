@@ -24,30 +24,30 @@ public class NormalDifficultyConfig : DifficultyConfig
         minFishPerColor = 5;
     }
     
-    /// <summary>
-    /// 配置魚生成管理器 - 普通模式產生3-4種顏色
-    /// </summary>
-    public override void ConfigureFishSpawnManager(FishSpawnManager fishSpawnManager)
-    {
-        if (fishSpawnManager == null) return;
-        
-        fishSpawnManager.SetSpawnMode(difficultyIndex);
-        Debug.Log($"[NormalDifficulty] 配置魚生成：{colorCount}種顏色混合");
-    }
-    
-    /// <summary>
-    /// 配置任務管理器 - 普通模式要求顏色+數量
-    /// </summary>
-    public override void ConfigureTaskManager(TaskManager taskManager)
-    {
-        if (taskManager == null) return;
-        
-        // 可以在這裡設定普通模式特有的任務參數
-        Debug.Log($"[NormalDifficulty] 配置任務：顏色+數量 ({colorCount}種顏色，每色{minFishPerColorTask}-{maxFishPerColorTask}條)");
-    }
-    
     public override string GetDescription()
     {
         return $"普通模式 - {timeLimit}秒 - 顏色+數量認知 - {scoreMultiplier}x分數";
+    }
+    
+    /// <summary>
+    /// 取得普通模式啟用的顏色 - 根據colorCount配置
+    /// </summary>
+    protected override string[] GetEnabledColors()
+    {
+        // 普通模式根據colorCount參數決定顏色數量
+        string[] allColors = new string[] 
+        {
+            "Red",
+            "Blue",
+            "Green",
+            "Yellow"
+        };
+
+        // 限制在指定數量內
+        int count = Mathf.Min(colorCount, allColors.Length);
+        string[] enabledColors = new string[count];
+        System.Array.Copy(allColors, enabledColors, count);
+        
+        return enabledColors;
     }
 }

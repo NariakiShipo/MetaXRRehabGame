@@ -485,9 +485,40 @@ public class FishSpawnManager : MonoBehaviour
     // ========== 任务系统接口 ==========
     
     /// <summary>
+    /// 应用鱼生成配置 - 使用数据驱动方式
+    /// </summary>
+    public void ApplySpawnConfig(FishSpawnConfig config)
+    {   
+        // 设置启用的颜色
+        enabledColors.Clear();
+        if (config.EnabledColors != null && config.EnabledColors.Length > 0)
+        {
+            enabledColors.AddRange(config.EnabledColors);
+            Debug.Log($"[FishSpawnManager] 应用配置：启用 {config.EnabledColors.Length} 种颜色：{string.Join(", ", config.EnabledColors)}");
+        }
+        else
+        {
+            // 如果未指定，启用所有颜色
+            enabledColors.AddRange(fishname);
+            Debug.Log("[FishSpawnManager] 未指定颜色配置，启用所有颜色");
+        }
+        
+        // 设置最小鱼数量
+        if (config.MinFishPerColor > 0)
+        {
+            minFishPerColor = config.MinFishPerColor;
+        }
+        
+        // 重新初始化数据
+        InitializeFishData();
+    }
+    
+    /// <summary>
     /// 设置生成模式（难度）- 控制生成哪些颜色的鱼
+    /// [已弃用] 请使用 ApplySpawnConfig 替代
     /// </summary>
     /// <param name="difficulty">0=Easy(单色), 1=Normal(3-4色), 2=Hard(3-4色)</param>
+    [System.Obsolete("请使用 ApplySpawnConfig 替代")]
     public void SetSpawnMode(int difficulty)
     {
         enabledColors.Clear();

@@ -27,30 +27,30 @@ public class HardDifficultyConfig : DifficultyConfig
         minFishPerColor = 5;
     }
     
-    /// <summary>
-    /// 配置魚生成管理器 - 困難模式產生3-4種顏色
-    /// </summary>
-    public override void ConfigureFishSpawnManager(FishSpawnManager fishSpawnManager)
-    {
-        if (fishSpawnManager == null) return;
-        
-        fishSpawnManager.SetSpawnMode(difficultyIndex);
-        Debug.Log($"[HardDifficulty] 配置魚生成：{colorCount}種顏色混合（多階段）");
-    }
-    
-    /// <summary>
-    /// 配置任務管理器 - 困難模式要求多階段+順序
-    /// </summary>
-    public override void ConfigureTaskManager(TaskManager taskManager)
-    {
-        if (taskManager == null) return;
-        
-        // 可以在這裡設定困難模式特有的任務參數
-        Debug.Log($"[HardDifficulty] 設定任務：多階段 ({subTaskCount}個子任務，每個{minFishPerSubTask}-{maxFishPerSubTask}條)");
-    }
-    
     public override string GetDescription()
     {
         return $"困難模式 - {timeLimit}秒 - 多階段任務 - {scoreMultiplier}x分數";
+    }
+    
+    /// <summary>
+    /// 取得困難模式啟用的顏色 - 根據colorCount配置
+    /// </summary>
+    protected override string[] GetEnabledColors()
+    {
+        // 困難模式根據colorCount參數決定顏色數量
+        string[] allColors = new string[] 
+        {
+            "Red",
+            "Blue",
+            "Green",
+            "Yellow"
+        };
+
+        // 限制在指定數量內
+        int count = Mathf.Min(colorCount, allColors.Length);
+        string[] enabledColors = new string[count];
+        System.Array.Copy(allColors, enabledColors, count);
+        
+        return enabledColors;
     }
 }

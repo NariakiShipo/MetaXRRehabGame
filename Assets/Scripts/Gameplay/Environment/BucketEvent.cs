@@ -6,7 +6,7 @@ public class BucketEvent : MonoBehaviour
 {
     [SerializeField] private TMP_Text bucketText;
     [SerializeField] private TMP_Text statisticsText;
-    [SerializeField] private FishSpawnManager fishSpawnManager;
+    private FishSpawnManager fishSpawnManager;
     
     private int fishCount = 0; 
     private List<Fish> fishes;
@@ -27,6 +27,9 @@ public class BucketEvent : MonoBehaviour
 
     private void Start()
     {
+        // 通过 ServiceLocator 获取 FishSpawnManager
+        fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
+        
         // initialize Fish data in Start to ensure Generator is ready
         fishes = fishSpawnManager != null ? fishSpawnManager.GetFish() : new List<Fish>();
         isInitialized = true;
