@@ -12,10 +12,15 @@ public class TaskDisplayUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI taskDescriptionText;   // 任务描述文本
     [SerializeField] private TextMeshProUGUI errorMessageText;      // 错误信息文本
     
+    [Header("困難模式 UI")]
+    [SerializeField] private TextMeshProUGUI stageProgressText;     // 階段進度文本 (例: "階段 2/5")
+    [SerializeField] private TextMeshProUGUI currentStageText;      // 當前階段描述
+    
     [Header("错误信息配置")]
     [SerializeField] private float errorMessageDuration = 2f;       // 错误信息显示时长
     
     private TaskManager taskManager;
+    private HardModeManager hardModeManager;
     
     // 用于跟踪当前运行的协程
     private Coroutine errorMessageCoroutine = null;
@@ -28,6 +33,9 @@ public class TaskDisplayUI : MonoBehaviour
         {
             Debug.LogError("[TaskDisplayUI] 找不到TaskManager!");
         }
+        
+        // 獲取 HardModeManager 引用
+        hardModeManager = HardModeManager.Instance;
     }
     
     private void OnEnable()
@@ -46,6 +54,9 @@ public class TaskDisplayUI : MonoBehaviour
         {
             Debug.LogError("[TaskDisplayUI] OnEnable: taskManager 为空，无法订阅事件！");
         }
+        
+        // 訂閱 HardModeManager 事件
+        SubscribeToHardModeEvents();
     }
     
     private void OnDisable()
@@ -59,8 +70,90 @@ public class TaskDisplayUI : MonoBehaviour
             taskManager.OnTaskFailed.RemoveListener(OnTaskFailed);
         }
         
+        // 取消訂閱 HardModeManager 事件
+        UnsubscribeFromHardModeEvents();
+        
         // 停止所有错误信息协程
         StopErrorMessageCoroutine();
+    }
+    
+    /// <summary>
+    /// 訂閱 HardModeManager 事件
+    /// </summary>
+    private void SubscribeToHardModeEvents()
+    {
+        if (hardModeManager == null)
+        {
+            hardModeManager = HardModeManager.Instance;
+        }
+        
+        if (hardModeManager != null)
+        {
+            hardModeManager.OnStageAdvanced.AddListener(OnHardModeStageAdvanced);
+            hardModeManager.OnTaskCompleted.AddListener(OnHardModeTaskCompleted);
+            hardModeManager.OnSequenceError.AddListener(OnHardModeSequenceError);
+            Debug.Log("[TaskDisplayUI] 已訂閱 HardModeManager 事件");
+        }
+    }
+    
+    /// <summary>
+    /// 取消訂閱 HardModeManager 事件
+    /// </summary>
+    private void UnsubscribeFromHardModeEvents()
+    {
+        if (hardModeManager != null)
+        {
+            hardModeManager.OnStageAdvanced.RemoveListener(OnHardModeStageAdvanced);
+            hardModeManager.OnTaskCompleted.RemoveListener(OnHardModeTaskCompleted);
+            hardModeManager.OnSequenceError.RemoveListener(OnHardModeSequenceError);
+        }
+    }
+    
+    /// <summary>
+    /// 困難模式階段進階
+    /// </summary>
+    private void OnHardModeStageAdvanced(int currentStage, int totalStages)
+    {
+        UpdateHardModeStageDisplay(currentStage, totalStages);
+    }
+    
+    /// <summary>
+    /// 困難模式任務完成
+    /// </summary>
+    private void OnHardModeTaskCompleted()
+    {
+        if (stageProgressText != null)
+        {
+            stageProgressText.text = "任務完成！";
+        }
+        if (currentStageText != null)
+        {
+            currentStageText.text = "";
+        }
+    }
+    
+    /// <summary>
+    /// 困難模式順序錯誤
+    /// </summary>
+    private void OnHardModeSequenceError(string errorMessage)
+    {
+        ShowErrorMessage(errorMessage);
+    }
+    
+    /// <summary>
+    /// 更新困難模式階段顯示
+    /// </summary>
+    private void UpdateHardModeStageDisplay(int currentStage, int totalStages)
+    {
+        if (stageProgressText != null)
+        {
+            stageProgressText.text = $"階段 {currentStage}/{totalStages}";
+        }
+        
+        if (currentStageText != null && hardModeManager != null)
+        {
+            currentStageText.text = hardModeManager.GetCurrentStageInstruction();
+        }
     }
     
     /// <summary>
@@ -71,6 +164,31 @@ public class TaskDisplayUI : MonoBehaviour
         Debug.Log($"[TaskDisplayUI] OnTaskGenerated 被调用，任务类型: {task?.taskType}");
         UpdateTaskDescription(task);
         HideErrorMessage();
+        
+        // 如果是 MultiStage 任務，顯示困難模式 UI
+        if (task != null && task.taskType == TaskType.MultiStage)
+        {
+            ShowHardModeUI(true);
+        }
+        else
+        {
+            ShowHardModeUI(false);
+        }
+    }
+    
+    /// <summary>
+    /// 顯示/隱藏困難模式 UI
+    /// </summary>
+    private void ShowHardModeUI(bool show)
+    {
+        if (stageProgressText != null)
+        {
+            stageProgressText.gameObject.SetActive(show);
+        }
+        if (currentStageText != null)
+        {
+            currentStageText.gameObject.SetActive(show);
+        }
     }
     
     /// <summary>

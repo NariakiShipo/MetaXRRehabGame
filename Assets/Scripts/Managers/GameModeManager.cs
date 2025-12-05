@@ -32,30 +32,17 @@ public class GameModeManager : MonoBehaviour
         // 遊戲開始前先暫停其他系統
         InitializeGameSystems(false);
         
-        // 使用 ServiceLocator 獲取服務
-        if (gameManager == null)
-        {
-            gameManager = ServiceLocator.Instance.Get<GameManager>();
-        }
+        // 使用 ServiceLocator 獲取服務（帶備用方案）
+        gameManager = GetServiceOrFind<GameManager>();
+        difficultyManager = GetServiceOrFind<DifficultyManager>();
+        taskManager = GetServiceOrFind<TaskManager>();
+        scoreManager = GetServiceOrFind<ScoreManager>();
+        fishSpawnManager = GetServiceOrFind<FishSpawnManager>();
         
-        if (difficultyManager == null)
-        {
-            difficultyManager = ServiceLocator.Instance.Get<DifficultyManager>();
-        }
-        
-        if (taskManager == null)
-        {
-            taskManager = ServiceLocator.Instance.Get<TaskManager>();
-        }
-        
+        // 验证关键依赖
         if (scoreManager == null)
         {
-            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
-        }
-        
-        if (fishSpawnManager == null)
-        {
-            fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
+            Debug.LogError("[GameModeManager] ❌ ScoreManager 未找到！分数系统将无法正常工作");
         }
         
         // 订阅任务验证事件
@@ -70,6 +57,26 @@ public class GameModeManager : MonoBehaviour
         HideTimeSelectionUI();
         
         Debug.Log("[GameModeManager] 等待玩家選擇難度...");
+    }
+    
+    /// <summary>
+    /// 從 ServiceLocator 獲取服務，如果失敗則在場景中查找
+    /// </summary>
+    private T GetServiceOrFind<T>() where T : UnityEngine.Object
+    {
+        // 使用 TryGet 避免錯誤日誌
+        if (ServiceLocator.Instance.TryGet(out T service))
+        {
+            return service;
+        }
+        
+        // 如果 ServiceLocator 沒有，嘗試在場景中查找
+        service = FindFirstObjectByType<T>();
+        if (service != null)
+        {
+            Debug.LogWarning($"[GameModeManager] {typeof(T).Name} 未在 ServiceLocator 中找到，使用場景中的實例");
+        }
+        return service;
     }
     
     void OnDestroy()

@@ -30,17 +30,22 @@ public class EasyDifficultyConfig : DifficultyConfig
     }
     
     /// <summary>
-    /// 取得簡單模式啟用的顏色 - 所有顏色都可用
+    /// 取得簡單模式啟用的顏色 - 只啟用紅色魚
     /// </summary>
     protected override string[] GetEnabledColors()
     {
-        // 簡單模式啟用所有顏色
+        // 簡單模式只啟用紅色魚，避免玩家混亂
+        if (useSingleColor)
+        {
+            return new string[] { "redFish" };
+        }
+        
+        // 如果不使用單一顏色，則啟用所有顏色
         return new string[] 
         {
-            "Red",
-            "Blue",
-            "Green",
-            "Yellow"
+            "redFish",
+            "grayFish",
+            "greenFish"
         };
     }
 }

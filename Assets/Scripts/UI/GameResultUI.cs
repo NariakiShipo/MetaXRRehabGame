@@ -49,18 +49,6 @@ public class GameResultUI : MonoBehaviour
     
     void Awake()
     {
-        // 使用 ServiceLocator 獲取 ScoreManager
-        if (scoreManager == null)
-        {
-            scoreManager = ServiceLocator.Instance.Get<ScoreManager>();
-        }
-        
-        // 使用 ServiceLocator 獲取 DifficultyManager
-        if (difficultyManager == null)
-        {
-            difficultyManager = ServiceLocator.Instance.Get<DifficultyManager>();
-        }
-        
         // 初始隐藏结算面板
         if (resultPanel != null)
         {
@@ -70,7 +58,58 @@ public class GameResultUI : MonoBehaviour
     
     void Start()
     {
+        // 獲取依賴
+        TryGetDependencies();
+        
         // 订阅游戏结束事件
+        SubscribeToEvents();
+    }
+    
+    /// <summary>
+    /// 嘗試獲取依賴
+    /// </summary>
+    private void TryGetDependencies()
+    {
+        // 獲取 ScoreManager - 使用 TryGet 避免錯誤日誌
+        if (scoreManager == null)
+        {
+            if (!ServiceLocator.Instance.TryGet(out scoreManager))
+            {
+                scoreManager = FindFirstObjectByType<ScoreManager>();
+                if (scoreManager != null)
+                {
+                    Debug.Log("[GameResultUI] 從場景中找到 ScoreManager");
+                }
+            }
+        }
+        
+        // 獲取 DifficultyManager - 使用 TryGet 避免錯誤日誌
+        if (difficultyManager == null)
+        {
+            if (!ServiceLocator.Instance.TryGet(out difficultyManager))
+            {
+                // 嘗試使用單例
+                difficultyManager = DifficultyManager.Instance;
+                
+                // 如果單例也為空，嘗試在場景中查找
+                if (difficultyManager == null)
+                {
+                    difficultyManager = FindFirstObjectByType<DifficultyManager>();
+                }
+                
+                if (difficultyManager != null)
+                {
+                    Debug.Log("[GameResultUI] 從場景中找到 DifficultyManager");
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 訂閱事件
+    /// </summary>
+    private void SubscribeToEvents()
+    {
         if (scoreManager != null)
         {
             scoreManager.OnGameEnd.AddListener(ShowGameResult);
@@ -78,7 +117,7 @@ public class GameResultUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[GameResultUI] ScoreManager 未找到！");
+            Debug.LogWarning("[GameResultUI] ScoreManager 未找到！請確保場景中有 ScoreManager");
         }
     }
     
@@ -155,8 +194,27 @@ public class GameResultUI : MonoBehaviour
     {
         if (difficultyText != null)
         {
-            string difficultyName = difficultyManager.GetCurrentDifficulty().GetDifficultyName();
-            difficultyText.text = $"難度: {difficultyName}";
+            if (difficultyManager != null)
+            {
+                var currentDifficulty = difficultyManager.GetCurrentDifficulty();
+                if (currentDifficulty != null)
+                {
+                    string difficultyName = currentDifficulty.GetDifficultyName();
+                    difficultyText.text = $"難度: {difficultyName}";
+                }
+                else
+                {
+                    // 如果難度配置為空，使用倍率顯示
+                    difficultyText.text = $"難度倍率: x{multiplier:F1}";
+                    Debug.LogWarning("[GameResultUI] GetCurrentDifficulty() 返回 null，使用倍率顯示");
+                }
+            }
+            else
+            {
+                // 如果沒有 DifficultyManager，使用倍率顯示
+                difficultyText.text = $"難度倍率: x{multiplier:F1}";
+                Debug.LogWarning("[GameResultUI] DifficultyManager 為空，使用倍率顯示");
+            }
         }
     }
     

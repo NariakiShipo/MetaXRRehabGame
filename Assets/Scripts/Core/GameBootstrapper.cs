@@ -4,6 +4,7 @@ using UnityEngine;
 /// Game Launcher - Responsible for registering all services to ServiceLocator
 /// Executed earliest in the scenario
 /// </summary>
+[DefaultExecutionOrder(-100)] // 確保此腳本在其他腳本之前執行
 public class GameBootstrapper : MonoBehaviour
 {
     [Header("Manager References")]

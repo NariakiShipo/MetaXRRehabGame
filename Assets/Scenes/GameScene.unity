@@ -827,7 +827,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bucketText: {fileID: 0}
   statisticsText: {fileID: 0}
-  fishSpawnManager: {fileID: 1315927261}
 --- !u!1 &52552613 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 309891425328011147, guid: 5a58239e57ef634499869b1e6f88c3dc, type: 3}
@@ -1209,6 +1208,60 @@ SkinnedMeshRenderer:
     m_Center: {x: -3.5085695, y: 0.08475034, z: -0.17565808}
     m_Extent: {x: 0.10651159, y: 0.18774159, z: 0.45612463}
   m_DirtyAABB: 0
+--- !u!1 &109681213
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 109681215}
+  - component: {fileID: 109681214}
+  m_Layer: 0
+  m_Name: GameBootstrapper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &109681214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109681213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65649e2cdeb369949a52c64c8fed1922, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 0}
+  scoreManager: {fileID: 0}
+  taskManager: {fileID: 0}
+  gameModeManager: {fileID: 0}
+  difficultyManager: {fileID: 0}
+  fishSpawnManager: {fileID: 0}
+  bucketEvent: {fileID: 0}
+  taskDisplayUI: {fileID: 0}
+  confirmButtonHandler: {fileID: 0}
+  retryButtonHandler: {fileID: 0}
+--- !u!4 &109681215
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109681213}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &122673440
 GameObject:
   m_ObjectHideFlags: 0
@@ -1920,8 +1973,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   taskDescriptionText: {fileID: 738058539}
   errorMessageText: {fileID: 921862885}
+  stageProgressText: {fileID: 0}
+  currentStageText: {fileID: 0}
   errorMessageDuration: 2
-  taskManager: {fileID: 1761142182}
 --- !u!114 &154835763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16274,8 +16328,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1bedbc63614d564991e60cbcadeb7e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fishSpawnManager: {fileID: 1315927261}
-  bucketEvent: {fileID: 52269706}
   overallProgressText: {fileID: 0}
   redFishText: {fileID: 0}
   blueFishText: {fileID: 0}
@@ -16310,11 +16362,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76919bb77bad9e847aee329ef2790f99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager: {fileID: 1761142180}
-  fishSpawnManager: {fileID: 1315927261}
-  taskManager: {fileID: 1761142182}
-  scoreManager: {fileID: 1761142183}
-  difficultyManager: {fileID: 1761142184}
   difficultySelectionUI:
   - {fileID: 577808102}
   - {fileID: 7341525102680543124}
@@ -16413,16 +16460,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb6495516b448a44c9df6ff56b4059b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  easyConfig:
+  easyDifficulty:
     difficultyIndex: 0
     taskType: 0
-    timeLimit: 10
+    timeLimit: 180
     scoreMultiplier: 1
     minFishPerColor: 5
     useSingleColor: 1
     minFishCount: 1
     maxFishCount: 3
-  normalConfig:
+  normalDifficulty:
     difficultyIndex: 1
     taskType: 1
     timeLimit: 300
@@ -16431,7 +16478,7 @@ MonoBehaviour:
     colorCount: 3
     minFishPerColorTask: 1
     maxFishPerColorTask: 3
-  hardConfig:
+  hardDifficulty:
     difficultyIndex: 2
     taskType: 2
     timeLimit: 600
@@ -16441,9 +16488,6 @@ MonoBehaviour:
     subTaskCount: 3
     minFishPerSubTask: 1
     maxFishPerSubTask: 2
-  fishSpawnManager: {fileID: 1315927261}
-  taskManager: {fileID: 1761142182}
-  scoreManager: {fileID: 1761142183}
 --- !u!1 &1765770788
 GameObject:
   m_ObjectHideFlags: 0
@@ -19679,6 +19723,7 @@ SceneRoots:
   - {fileID: 1524162615}
   - {fileID: 1308138109}
   - {fileID: 1626556764}
-  - {fileID: 1761142177}
   - {fileID: 1757611064}
   - {fileID: 700485434}
+  - {fileID: 1761142177}
+  - {fileID: 109681215}

@@ -16,21 +16,33 @@ public class ConfirmButtonHandler : MonoBehaviour
     
     private void Awake()
     {
-        // 使用 ServiceLocator 獲取服務
+        // 使用 ServiceLocator 獲取服務（使用 TryGet 避免錯誤日誌）
         if (taskManager == null)
         {
-            taskManager = ServiceLocator.Instance.Get<TaskManager>();
+            if (!ServiceLocator.Instance.TryGet(out taskManager))
+            {
+                taskManager = FindFirstObjectByType<TaskManager>();
+            }
         }
         
         if (bucketEvent == null)
         {
-            bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
+            if (!ServiceLocator.Instance.TryGet(out bucketEvent))
+            {
+                bucketEvent = FindFirstObjectByType<BucketEvent>();
+            }
         }
         
         if (gameModeManager == null)
         {
-            gameModeManager = ServiceLocator.Instance.Get<GameModeManager>();
+            if (!ServiceLocator.Instance.TryGet(out gameModeManager))
+            {
+                gameModeManager = FindFirstObjectByType<GameModeManager>();
+            }
         }
+        
+        // 診斷日誌
+        Debug.Log($"[ConfirmButtonHandler] 初始化完成 - TaskManager: {(taskManager != null ? "✓" : "✗")}, BucketEvent: {(bucketEvent != null ? "✓" : "✗")}");
     }
     
     /// <summary>

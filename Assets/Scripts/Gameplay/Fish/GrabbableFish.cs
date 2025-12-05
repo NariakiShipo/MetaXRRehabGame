@@ -20,6 +20,10 @@ public class GrabbableFish : MonoBehaviour
     private FishMovement fishMovement;
     private bool isGrabbed = false;
     private string fishColor;
+    
+    // 困難模式鎖定相關
+    private BucketEvent bucketEvent;
+    private bool isLockedInBucket = false;
    
     private void Awake()
     {
@@ -45,6 +49,9 @@ public class GrabbableFish : MonoBehaviour
         {
             fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
         }
+        
+        // 獲取 BucketEvent 引用（用於困難模式檢查）
+        bucketEvent = FindFirstObjectByType<BucketEvent>();
     }
 
     /// <summary>
@@ -53,7 +60,22 @@ public class GrabbableFish : MonoBehaviour
     /// </summary>
     public void OnFishGrabbed()
     {
+        // 困難模式：檢查魚是否被鎖定
+        if (bucketEvent != null && bucketEvent.IsFishLocked(gameObject))
+        {
+            Debug.LogWarning($"[GrabbableFish] {fishColor} 已在困難模式下鎖定，無法抓取！");
+            isLockedInBucket = true;
+            
+            // 這裡可以添加視覺/聽覺反饋
+            // 例如播放"嗡"的錯誤音效、魚閃爍紅色等
+            
+            // 強制放開（如果 Grabbable 支持）
+            // 由於 Meta XR SDK 的限制，可能需要在 FixedUpdate 中處理
+            return;
+        }
+        
         isGrabbed = true;
+        isLockedInBucket = false;
         
         Debug.Log($"[GrabbableFish] {fishColor} 被抓取了！");
         
@@ -143,6 +165,11 @@ public class GrabbableFish : MonoBehaviour
     /// 檢查魚是否被抓住
     /// </summary>
     public bool IsGrabbed => isGrabbed;
+    
+    /// <summary>
+    /// 檢查魚是否在困難模式下被鎖定
+    /// </summary>
+    public bool IsLockedInBucket => isLockedInBucket || (bucketEvent != null && bucketEvent.IsFishLocked(gameObject));
 
     /// <summary>
     /// 設置是否在放開時銷毀魚

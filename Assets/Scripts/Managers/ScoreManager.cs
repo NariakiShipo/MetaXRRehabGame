@@ -8,7 +8,7 @@ public class ScoreManager : MonoBehaviour
 {
     [Header("分数设置")]
     [Tooltip("完成任务的基础分数")]
-    [SerializeField] private int baseTaskScore = 100;
+    [SerializeField] private int baseTaskScore = 5;
     
     [Tooltip("简单模式分数倍率")]
     [SerializeField] private float easyModeMultiplier = 1.0f;
@@ -75,7 +75,7 @@ public class ScoreManager : MonoBehaviour
     {
         if (isGameEnded) return;
         
-        int score = Mathf.RoundToInt(baseTaskScore * currentMultiplier);
+        int score = Mathf.RoundToInt(baseTaskScore);
         currentScore += score;
         completedTasks++;
         
