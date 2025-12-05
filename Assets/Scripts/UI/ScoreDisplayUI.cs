@@ -61,20 +61,9 @@ public class ScoreDisplayUI : MonoBehaviour
     {
         if (scoreManager == null)
         {
-            // 使用 TryGet 避免錯誤日誌
             if (!ServiceLocator.Instance.TryGet(out scoreManager))
             {
-                // 如果 ServiceLocator 沒有，嘗試在場景中查找
                 scoreManager = FindFirstObjectByType<ScoreManager>();
-                
-                if (scoreManager != null)
-                {
-                    Debug.Log("[ScoreDisplayUI] 從場景中找到 ScoreManager");
-                }
-            }
-            else
-            {
-                Debug.Log("[ScoreDisplayUI] 從 ServiceLocator 獲取 ScoreManager 成功");
             }
         }
     }
@@ -87,14 +76,7 @@ public class ScoreDisplayUI : MonoBehaviour
         if (scoreManager != null)
         {
             scoreManager.OnScoreChanged.AddListener(OnScoreChanged);
-            Debug.Log("[ScoreDisplayUI] 已订阅分数变化事件");
-            
-            // 立即更新當前分數
             UpdateScoreDisplay(scoreManager.GetCurrentScore());
-        }
-        else
-        {
-            Debug.LogWarning("[ScoreDisplayUI] ScoreManager 未找到！請確保場景中有 ScoreManager 並已註冊到 ServiceLocator");
         }
     }
     
@@ -135,8 +117,6 @@ public class ScoreDisplayUI : MonoBehaviour
     /// </summary>
     public void OnScoreChanged(int newScore)
     {
-        Debug.Log($"[ScoreDisplayUI] 分数更新: {displayedScore} -> {newScore}");
-        
         if (enableAnimation)
         {
             targetScore = newScore;

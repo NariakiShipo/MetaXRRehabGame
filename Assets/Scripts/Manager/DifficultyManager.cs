@@ -122,11 +122,24 @@ public class DifficultyManager : MonoBehaviour
     
     private void ApplyDifficulty()
     {
-        // Publish events instead of configuring directly
+        Debug.Log("===========================================");
+        Debug.Log($"[DifficultyManager] 🎯 應用難度設定: {currentDifficulty?.GetDifficultyName()}");
+        Debug.Log($"[DifficultyManager] 任務類型: {currentDifficulty?.GetTaskType()}");
+        
+        // 配置所有相關管理器
+        ConfigureAllManagers();
+        
+        // 發布事件通知其他系統
         EventBus.Instance.Publish(new DifficultyChangedEvent 
         { 
             NewDifficulty = currentDifficulty 
         });
+        
+        // 觸發本地事件
+        OnDifficultyChanged?.Invoke(currentDifficulty);
+        
+        Debug.Log($"[DifficultyManager] ✅ 難度已應用完成: {currentDifficulty?.GetDifficultyName()}");
+        Debug.Log("===========================================");
     }
     /// <summary>
     /// 根据索引设置难度
@@ -203,6 +216,23 @@ public class DifficultyManager : MonoBehaviour
         if (scoreManager != null)
         {
             scoreManager.SetDifficulty(currentDifficulty.GetTaskType());
+        }
+        
+        // 配置水桶模式（切換普通/困難模式水桶）
+        if (MultiBucketManager.Instance != null)
+        {
+            TaskType taskType = currentDifficulty.GetTaskType();
+            if (taskType == TaskType.MultiStage)
+            {
+                // 困難模式會在 HardModeManager.SetupMultiBuckets() 中啟用多水桶
+                Debug.Log("[DifficultyManager] 困難模式 - 水桶將由 HardModeManager 設置");
+            }
+            else
+            {
+                // 簡單/普通模式使用普通水桶
+                MultiBucketManager.Instance.ActivateNormalMode();
+                Debug.Log("[DifficultyManager] 普通模式 - 已啟用普通水桶");
+            }
         }
     }
     

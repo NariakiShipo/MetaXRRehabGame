@@ -97,10 +97,7 @@ public class GameResultUI : MonoBehaviour
                     difficultyManager = FindFirstObjectByType<DifficultyManager>();
                 }
                 
-                if (difficultyManager != null)
-                {
-                    Debug.Log("[GameResultUI] 從場景中找到 DifficultyManager");
-                }
+
             }
         }
     }

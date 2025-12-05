@@ -7,7 +7,7 @@ public class RetryButtonHandler : MonoBehaviour
 {
     [Header("引用")]
     [SerializeField] private TaskManager taskManager;
-    [SerializeField] private BucketEvent bucketEvent;
+    [SerializeField] private BucketEvent bucketEvent;  // 備用：直接指定的水桶
     
     private void Awake()
     {
@@ -17,6 +17,7 @@ public class RetryButtonHandler : MonoBehaviour
             taskManager = ServiceLocator.Instance.Get<TaskManager>();
         }
         
+        // bucketEvent 會在 GetActiveBucketEvent() 中動態獲取，這裡只作為備用
         if (bucketEvent == null)
         {
             bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
@@ -24,20 +25,45 @@ public class RetryButtonHandler : MonoBehaviour
     }
     
     /// <summary>
+    /// 獲取當前應該使用的 BucketEvent（根據難度模式）
+    /// </summary>
+    private BucketEvent GetActiveBucketEvent()
+    {
+        // 如果有 MultiBucketManager，根據當前模式獲取正確的水桶
+        if (MultiBucketManager.Instance != null)
+        {
+            if (!MultiBucketManager.Instance.IsHardMode)
+            {
+                // 普通模式：使用普通水桶
+                BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
+                if (normalBucket != null)
+                {
+                    return normalBucket;
+                }
+            }
+        }
+        
+        // 備用：使用直接設置的 bucketEvent
+        return bucketEvent;
+    }
+    
+    /// <summary>
     /// 重试按钮按下（由ButtonEvent的UnityEvent调用）
     /// </summary>
     public void OnRetryButtonPressed()
     {
-        if (taskManager == null || bucketEvent == null)
+        BucketEvent activeBucket = GetActiveBucketEvent();
+        
+        if (taskManager == null || activeBucket == null)
         {
             Debug.LogWarning("[RetryButtonHandler] TaskManager或BucketEvent未设置");
             return;
         }
         
-        Debug.Log("[RetryButtonHandler] 重试当前子任务");
+        Debug.Log($"[RetryButtonHandler] 重试当前子任务，使用水桶: {activeBucket.gameObject.name}");
         
         // 清空桶
-        bucketEvent.ClearBucket();
+        activeBucket.ClearBucket();
         
         // 重置当前子任务进度
         taskManager.RetryCurrentSubTask();

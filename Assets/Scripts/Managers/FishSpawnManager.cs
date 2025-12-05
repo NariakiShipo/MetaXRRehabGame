@@ -45,6 +45,9 @@ public class FishSpawnManager : MonoBehaviour
     // 任务系统：控制生成哪些颜色的鱼
     private List<string> enabledColors = new List<string>();
     
+    // 是否允許在 OnEnable 時自動生成魚（由 GameModeManager 控制）
+    private bool autoSpawnOnEnable = true;
+    
     void Awake()
     {
         // 在 Awake 中初始化 Fish 資料（同步執行，確保 Start 時資料已準備好）
@@ -53,14 +56,28 @@ public class FishSpawnManager : MonoBehaviour
     
     void OnEnable()
     {
-        if(spawnPoints != null && spawnPoints.Length > 0 && fishPrefab != null)
+        // 只有在允許自動生成時才生成魚
+        // GameModeManager 會先禁用此組件，設定配置後再啟用，並手動調用 RegenerateAllFish()
+        if (autoSpawnOnEnable && spawnPoints != null && spawnPoints.Length > 0 && fishPrefab != null)
         {
             StartCoroutine(SpawnFishWithDelay());
+        }
+        else if (!autoSpawnOnEnable)
+        {
+            Debug.Log("[FishSpawnManager] 自動生成已禁用，等待手動調用 RegenerateAllFish()");
         }
         else
         {
             Debug.LogError("[FishSpawnManager] 請在 Inspector 中設置 Spawn Points 和 Fish Prefabs！");
         }
+    }
+    
+    /// <summary>
+    /// 設定是否在 OnEnable 時自動生成魚
+    /// </summary>
+    public void SetAutoSpawnOnEnable(bool enabled)
+    {
+        autoSpawnOnEnable = enabled;
     }
     
     /// <summary>

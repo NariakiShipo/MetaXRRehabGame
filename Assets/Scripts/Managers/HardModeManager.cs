@@ -13,13 +13,13 @@ using UnityEngine.Events;
 /// </summary>
 public class HardModeManager : MonoBehaviour
 {
-    [Header("任務配置")]
+    [Header("任務配置 (從 HardDifficultyConfig 讀取，以下為預設值)")]
     [SerializeField] private int minStages = 2;
     [SerializeField] private int maxStages = 3;
     [SerializeField] private int minFishPerStage = 1;
-    [SerializeField] private int maxFishPerStage = 3;
+    [SerializeField] private int maxFishPerStage = 2;
     
-    [Header("可用顏色")]
+    [Header("可用顏色 (從 HardDifficultyConfig 讀取)")]
     [SerializeField] private FishColor[] availableColors = { FishColor.Red, FishColor.Gray, FishColor.Yellow, FishColor.Green };
     
     [Header("事件")]
@@ -42,6 +42,9 @@ public class HardModeManager : MonoBehaviour
     // 追蹤水桶中魚的進入順序
     private List<FishColor> fishEntrySequence = new List<FishColor>();
     
+    // 配置是否已初始化
+    private bool isConfigInitialized = false;
+    
     // 單例
     public static HardModeManager Instance { get; private set; }
     
@@ -58,6 +61,51 @@ public class HardModeManager : MonoBehaviour
         if (OnStageAdvanced == null) OnStageAdvanced = new UnityEvent<int, int>();
         if (OnTaskCompleted == null) OnTaskCompleted = new UnityEvent();
         if (OnSequenceError == null) OnSequenceError = new UnityEvent<string>();
+    }
+    
+    private void Start()
+    {
+        // 嘗試從 DifficultyManager 獲取配置
+        TryLoadConfigFromDifficultyManager();
+    }
+    
+    /// <summary>
+    /// 從 DifficultyManager 獲取困難模式配置
+    /// </summary>
+    private void TryLoadConfigFromDifficultyManager()
+    {
+        if (isConfigInitialized) return;
+        
+        DifficultyManager difficultyManager = DifficultyManager.Instance;
+        if (difficultyManager != null)
+        {
+            HardDifficultyConfig hardConfig = difficultyManager.GetHardConfig();
+            if (hardConfig != null)
+            {
+                ApplyConfig(hardConfig.GetHardModeConfig());
+                Debug.Log("[HardModeManager] 已從 HardDifficultyConfig 載入配置");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 應用困難模式配置
+    /// </summary>
+    public void ApplyConfig(HardModeConfig config)
+    {
+        minStages = config.MinStages;
+        maxStages = config.MaxStages;
+        minFishPerStage = config.MinFishPerStage;
+        maxFishPerStage = config.MaxFishPerStage;
+        
+        if (config.AvailableColors != null && config.AvailableColors.Length > 0)
+        {
+            availableColors = config.AvailableColors;
+        }
+        
+        isConfigInitialized = true;
+        
+        Debug.Log($"[HardModeManager] 配置已更新: 階段數 {minStages}-{maxStages}, 每階段魚數 {minFishPerStage}-{maxFishPerStage}, 顏色數 {availableColors.Length}");
     }
     
     /// <summary>
@@ -116,6 +164,9 @@ public class HardModeManager : MonoBehaviour
         Debug.Log($"[HardModeManager] 任務內容: {currentTask.instructionText}");
         Debug.Log($"[HardModeManager] 總共 {currentTask.TotalStages} 個階段，需要 {currentTask.GetTotalFishRequired()} 隻魚");
         
+        // 設置多水桶（如果可用）
+        SetupMultiBuckets();
+        
         OnTaskGenerated?.Invoke(currentTask);
         
         // 通知 UI 初始階段進度
@@ -137,12 +188,45 @@ public class HardModeManager : MonoBehaviour
         
         Debug.Log($"[HardModeManager] 生成自定義困難模式任務: {currentTask.instructionText}");
         
+        // 設置多水桶（如果可用）
+        SetupMultiBuckets();
+        
         OnTaskGenerated?.Invoke(currentTask);
         
         // 通知 UI 初始階段進度
         NotifyStageProgress();
         
         return currentTask;
+    }
+    
+    /// <summary>
+    /// 設置多水桶模式
+    /// </summary>
+    private void SetupMultiBuckets()
+    {
+        if (currentTask == null)
+        {
+            Debug.LogWarning("[HardModeManager] 無法設置多水桶：當前任務為 null");
+            return;
+        }
+        
+        Debug.Log("===========================================");
+        Debug.Log("[HardModeManager] 🎯 準備設置多水桶模式...");
+        Debug.Log($"[HardModeManager] 當前任務 ID: {currentTask.taskID}, 階段數: {currentTask.TotalStages}");
+        
+        // 如果有 MultiBucketManager，使用多水桶模式
+        if (MultiBucketManager.Instance != null)
+        {
+            Debug.Log("[HardModeManager] ✅ 找到 MultiBucketManager，開始設置水桶...");
+            MultiBucketManager.Instance.SetupBucketsForTask(currentTask);
+            Debug.Log($"[HardModeManager] ✅ 已設置 {currentTask.TotalStages} 個水桶對應任務階段");
+        }
+        else
+        {
+            Debug.LogWarning("[HardModeManager] ⚠️ MultiBucketManager.Instance 為 null！無法使用多水桶模式");
+            Debug.LogWarning("[HardModeManager] 請確認場景中有 MultiBucketManager 物件且已正確設置");
+        }
+        Debug.Log("===========================================");
     }
     
     #endregion
@@ -205,8 +289,8 @@ public class HardModeManager : MonoBehaviour
     /// 驗證水桶中的魚是否符合任務要求（核心驗證邏輯）
     /// 
     /// 驗證規則：
-    /// 1. 按照 fishEntrySequence 的順序驗證
-    /// 2. 每個階段的魚必須連續且顏色正確
+    /// 1. 多水桶模式：檢查每個水桶是否符合對應階段需求
+    /// 2. 單水桶模式：按照 fishEntrySequence 的順序驗證
     /// 3. 數量必須精確匹配
     /// </summary>
     public HardModeValidationResult ValidateHardMode(List<GameObject> bucketFish)
@@ -217,8 +301,45 @@ public class HardModeManager : MonoBehaviour
             return HardModeValidationResult.Incomplete;
         }
         
-        // 使用進入順序來驗證
+        // 優先使用多水桶模式驗證
+        if (MultiBucketManager.Instance != null && MultiBucketManager.Instance.GetActiveBucketCount() > 0)
+        {
+            return ValidateMultiBucketMode();
+        }
+        
+        // 單水桶模式：使用進入順序來驗證
         return ValidateSequence(fishEntrySequence);
+    }
+    
+    /// <summary>
+    /// 多水桶模式驗證 - 檢查每個水桶是否符合對應階段需求
+    /// </summary>
+    private HardModeValidationResult ValidateMultiBucketMode()
+    {
+        if (MultiBucketManager.Instance == null) 
+            return HardModeValidationResult.Incomplete;
+        
+        bool allValid = MultiBucketManager.Instance.ValidateAllBuckets();
+        
+        if (allValid)
+        {
+            Debug.Log("[HardModeManager] 多水桶模式：所有階段驗證通過！");
+            OnTaskCompleted?.Invoke();
+            OnTaskComplete?.Invoke(currentTask);
+            return HardModeValidationResult.Success;
+        }
+        
+        // 檢查是否有部分完成
+        int completed = MultiBucketManager.Instance.GetCompletedBucketCount();
+        int total = MultiBucketManager.Instance.GetActiveBucketCount();
+        
+        if (completed > 0)
+        {
+            Debug.Log($"[HardModeManager] 多水桶模式：已完成 {completed}/{total} 個階段");
+            return HardModeValidationResult.Incomplete;
+        }
+        
+        return HardModeValidationResult.Incomplete;
     }
     
     /// <summary>
@@ -365,6 +486,12 @@ public class HardModeManager : MonoBehaviour
             currentTask.Reset();
             fishEntrySequence.Clear();
             
+            // 重置多水桶（如果使用）
+            if (MultiBucketManager.Instance != null)
+            {
+                MultiBucketManager.Instance.RetryTask();
+            }
+            
             Debug.Log("[HardModeManager] 任務已重置");
             OnTaskReset?.Invoke();
         }
@@ -377,6 +504,12 @@ public class HardModeManager : MonoBehaviour
     {
         currentTask = null;
         fishEntrySequence.Clear();
+        
+        // 隱藏多水桶（如果使用）
+        if (MultiBucketManager.Instance != null)
+        {
+            MultiBucketManager.Instance.HideAllBuckets();
+        }
     }
     
     #endregion

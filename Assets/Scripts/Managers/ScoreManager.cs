@@ -79,9 +79,6 @@ public class ScoreManager : MonoBehaviour
         currentScore += score;
         completedTasks++;
         
-        Debug.Log($"[ScoreManager] 任务完成！获得 {score} 分（基础: {baseTaskScore}, 倍率: {currentMultiplier}x）");
-        Debug.Log($"[ScoreManager] 当前总分: {currentScore}，已完成任务: {completedTasks}");
-        
         OnScoreChanged?.Invoke(currentScore);
     }
     

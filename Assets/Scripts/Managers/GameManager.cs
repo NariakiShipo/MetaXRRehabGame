@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     private float timer = 0f;
     private float timerSpent;
     private bool isEnd = false;
+    private bool isGameStarted = false; // 新增：遊戲是否已開始
     public int score = 0;
     
     void Start()
@@ -26,14 +27,17 @@ public class GameManager : MonoBehaviour
     
     void Update()
     {
-        if (timer >= 0f && !isEnd)
+        // 只有在遊戲開始後才計時
+        if (!isGameStarted) return;
+        
+        if (timer > 0f && !isEnd)
         {
             timer -= Time.deltaTime;
             float minutes = Mathf.Floor(timer / 60f);
             float seconds = Mathf.Floor(timer % 60f);
             timerText.text = "Time: " + minutes.ToString("00") + ":" + seconds.ToString("00");
         }
-        else if (!isEnd)
+        else if (timer <= 0f && !isEnd && isGameStarted)
         {
             isEnd = true;
             Debug.LogWarning("Time's up!");
@@ -53,6 +57,8 @@ public class GameManager : MonoBehaviour
         timer = timeLimit;
         timerSpent = timeLimit;
         isEnd = false; // 重置結束標記
+        isGameStarted = true; // 標記遊戲已開始
+        Debug.Log($"[GameManager] 遊戲開始！時間限制：{timeLimit} 秒");
     }
     
     /// <summary>

@@ -23,7 +23,24 @@ public class BucketEvent : MonoBehaviour
     private HashSet<GameObject> lockedFish = new HashSet<GameObject>();
     
     // 當前是否為困難模式
-    private bool isHardMode = false; 
+    private bool isHardMode = false;
+    
+    // 是否被 MultiBucketManager 管理（進行嚴格顏色檢查）
+    private bool isMultiBucketManaged = false;
+    
+    // ========== 多水桶支援 ==========
+    [Header("多水桶設定")]
+    [Tooltip("此水桶對應的階段索引（0-based）")]
+    [SerializeField] private int stageIndex = 0;
+    
+    [Tooltip("此水桶的魚容量限制（0 = 無限制）")]
+    [SerializeField] private int capacity = 0;
+    
+    [Tooltip("目標魚顏色")]
+    [SerializeField] private FishColor targetColor = FishColor.Red;
+    
+    [Tooltip("魚被彈出時的力道")]
+    [SerializeField] private float ejectForce = 3f; 
 
     private void Awake()
     {
@@ -56,14 +73,48 @@ public class BucketEvent : MonoBehaviour
         
         if (!string.IsNullOrEmpty(fishTag))
         {
-            Debug.Log($"[BucketEvent] {fishTag} 進入桶子");
+            Debug.Log($"[BucketEvent] {gameObject.name}: {fishTag} 進入桶子");
+            Debug.Log($"[BucketEvent] 模式狀態 - isHardMode: {isHardMode}, isMultiBucketManaged: {isMultiBucketManaged}, capacity: {capacity}, targetColor: {targetColor}");
+            
+            // 多水桶模式：只有被 MultiBucketManager 管理的水桶才進行嚴格檢查
+            if (isMultiBucketManaged && capacity > 0)
+            {
+                Debug.Log($"[BucketEvent] 多水桶模式檢查 - 目前魚數: {fishGameObjectsInBucket.Count}/{capacity}");
+                
+                // 檢查容量
+                if (fishGameObjectsInBucket.Count >= capacity)
+                {
+                    Debug.LogWarning($"[BucketEvent] 水桶已滿！容量: {capacity}");
+                    EjectFish(other.gameObject);
+                    return;
+                }
+                
+                // 檢查顏色是否正確
+                FishColor fishColor = FishColorHelper.GetColorFromTag(fishTag);
+                Debug.Log($"[BucketEvent] 顏色比較 - 魚: {fishColor}, 目標: {targetColor}");
+                
+                if (fishColor != targetColor)
+                {
+                    Debug.LogWarning($"[BucketEvent] 顏色錯誤！需要 {FishColorHelper.GetDisplayName(targetColor)}，但放入了 {FishColorHelper.GetDisplayName(fishColor)}");
+                    EjectFish(other.gameObject);
+                    
+                    // 通知 MultiBucketManager
+                    if (MultiBucketManager.Instance != null)
+                    {
+                        MultiBucketManager.Instance.OnBucketError?.Invoke(stageIndex, 
+                            $"顏色錯誤！需要{FishColorHelper.GetDisplayName(targetColor)}");
+                    }
+                    return;
+                }
+                
+                Debug.Log($"[BucketEvent] ✅ 多水桶模式檢查通過");
+            }
             
             // 设置鱼的 isInBucket 状态
             FishForwardMovement fishMovement = other.GetComponent<FishForwardMovement>();
             if (fishMovement != null)
             {
                 fishMovement.isInBucket = true;
-                Debug.Log($"[BucketEvent] 设置 {fishTag} isInBucket = true");
             }
             
             // 添加到鱼GameObject列表（任务系统需要）
@@ -77,13 +128,18 @@ public class BucketEvent : MonoBehaviour
                     fishEntryOrder.Add(other.gameObject);
                     lockedFish.Add(other.gameObject);
                     
-                    // 通知 HardModeManager
-                    if (HardModeManager.Instance != null)
+                    // 通知 MultiBucketManager（多水桶模式）
+                    if (MultiBucketManager.Instance != null)
+                    {
+                        MultiBucketManager.Instance.OnFishEnteredBucket(stageIndex, other.gameObject);
+                    }
+                    // 通知 HardModeManager（單水桶模式）
+                    else if (HardModeManager.Instance != null)
                     {
                         HardModeManager.Instance.OnFishEnteredBucket(other.gameObject);
                     }
                     
-                    Debug.Log($"[BucketEvent] 困難模式：{fishTag} 已鎖定 (順序: {fishEntryOrder.Count})");
+                    Debug.Log($"[BucketEvent] 困難模式：{fishTag} 已鎖定 (數量: {fishGameObjectsInBucket.Count}/{capacity})");
                 }
             }
             
@@ -321,12 +377,22 @@ public class BucketEvent : MonoBehaviour
     public void SetHardMode(bool enabled)
     {
         isHardMode = enabled;
-        Debug.Log($"[BucketEvent] 困難模式: {(enabled ? "啟用" : "停用")}");
+        Debug.Log($"[BucketEvent] {gameObject.name} 困難模式: {(enabled ? "啟用" : "停用")}");
         
         if (!enabled)
         {
             ClearHardModeData();
+            isMultiBucketManaged = false;
         }
+    }
+    
+    /// <summary>
+    /// 設置是否被 MultiBucketManager 管理（進行嚴格顏色檢查）
+    /// </summary>
+    public void SetMultiBucketManaged(bool managed)
+    {
+        isMultiBucketManaged = managed;
+        Debug.Log($"[BucketEvent] {gameObject.name} 多水桶管理: {(managed ? "啟用" : "停用")}");
     }
     
     /// <summary>
@@ -431,5 +497,139 @@ public class BucketEvent : MonoBehaviour
         UpdateUI();
         
         Debug.Log("[BucketEvent] 困難模式任務已重置，魚已釋放");
+    }
+    
+    // ========== 多水桶支援接口 ==========
+    
+    /// <summary>
+    /// 設置此水桶對應的階段索引
+    /// </summary>
+    public void SetStageIndex(int index)
+    {
+        stageIndex = index;
+        Debug.Log($"[BucketEvent] {gameObject.name} - 設置階段索引: {index}");
+    }
+    
+    /// <summary>
+    /// 獲取此水桶對應的階段索引
+    /// </summary>
+    public int GetStageIndex() => stageIndex;
+    
+    /// <summary>
+    /// 設置此水桶的容量限制
+    /// </summary>
+    public void SetCapacity(int cap)
+    {
+        capacity = cap;
+        Debug.Log($"[BucketEvent] {gameObject.name} - 設置容量: {cap}");
+    }
+    
+    /// <summary>
+    /// 獲取此水桶的容量限制
+    /// </summary>
+    public int GetCapacity() => capacity;
+    
+    /// <summary>
+    /// 設置此水桶的目標魚顏色
+    /// </summary>
+    public void SetTargetColor(FishColor color)
+    {
+        targetColor = color;
+        Debug.Log($"[BucketEvent] {gameObject.name} - 設置目標顏色: {color} ({FishColorHelper.GetDisplayName(color)})");
+    }
+    
+    /// <summary>
+    /// 獲取此水桶的目標魚顏色
+    /// </summary>
+    public FishColor GetTargetColor() => targetColor;
+    
+    /// <summary>
+    /// 彈出指定的魚（用於容量超限或顏色錯誤時）
+    /// </summary>
+    public void EjectFish(GameObject fish)
+    {
+        if (fish == null) return;
+        
+        Debug.Log($"[BucketEvent] 彈出魚: {fish.name}");
+        
+        // 從列表中移除
+        fishGameObjectsInBucket.Remove(fish);
+        fishEntryOrder.Remove(fish);
+        lockedFish.Remove(fish);
+        
+        // 重置魚的狀態
+        FishForwardMovement fishMovement = fish.GetComponent<FishForwardMovement>();
+        if (fishMovement != null)
+        {
+            fishMovement.isInBucket = false;
+        }
+        
+        // 計算彈出方向（向上並向外）
+        Vector3 ejectDirection = (fish.transform.position - transform.position).normalized;
+        ejectDirection.y = 1f; // 確保向上彈
+        ejectDirection = ejectDirection.normalized;
+        
+        // 應用彈出力
+        Rigidbody rb = fish.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.AddForce(ejectDirection * ejectForce, ForceMode.Impulse);
+        }
+        else
+        {
+            // 如果沒有 Rigidbody，直接移動位置
+            fish.transform.position = transform.position + ejectDirection * 1.5f;
+        }
+        
+        // 更新計數
+        string fishTag = GetFishTag(fish);
+        if (!string.IsNullOrEmpty(fishTag) && fishInBucket.ContainsKey(fishTag))
+        {
+            fishCount = Mathf.Max(0, fishCount - 1);
+            fishInBucket[fishTag] = Mathf.Max(0, fishInBucket[fishTag] - 1);
+            
+            Fish fishData = fishes?.Find(f => f.color == fishTag);
+            if (fishData != null)
+            {
+                fishData.DecrementCaught();
+            }
+        }
+        
+        UpdateUI();
+    }
+    
+    /// <summary>
+    /// 檢查此水桶是否已滿
+    /// </summary>
+    public bool IsFull()
+    {
+        if (capacity <= 0) return false; // 無容量限制
+        return fishGameObjectsInBucket.Count >= capacity;
+    }
+    
+    /// <summary>
+    /// 獲取當前魚數量
+    /// </summary>
+    public int GetCurrentFishCount() => fishGameObjectsInBucket.Count;
+    
+    /// <summary>
+    /// 檢查此水桶是否已達到目標（數量和顏色都正確）
+    /// </summary>
+    public bool IsTargetReached()
+    {
+        if (capacity <= 0) return false;
+        if (fishGameObjectsInBucket.Count != capacity) return false;
+        
+        string expectedTag = FishColorHelper.GetTagFromColor(targetColor);
+        foreach (var fish in fishGameObjectsInBucket)
+        {
+            if (fish != null && !fish.CompareTag(expectedTag))
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

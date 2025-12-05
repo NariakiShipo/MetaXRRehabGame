@@ -10,6 +10,7 @@ public class GameModeManager : MonoBehaviour
     private TaskManager taskManager;
     private ScoreManager scoreManager;
     private DifficultyManager difficultyManager;
+    private HardModeManager hardModeManager;
     
     [Header("UI References")]
     [Tooltip("難度選擇按鈕的父物體（選擇後會隱藏）")]
@@ -29,20 +30,33 @@ public class GameModeManager : MonoBehaviour
     
     void Start()
     {
-        // 遊戲開始前先暫停其他系統
-        InitializeGameSystems(false);
-        
         // 使用 ServiceLocator 獲取服務（帶備用方案）
         gameManager = GetServiceOrFind<GameManager>();
         difficultyManager = GetServiceOrFind<DifficultyManager>();
         taskManager = GetServiceOrFind<TaskManager>();
         scoreManager = GetServiceOrFind<ScoreManager>();
         fishSpawnManager = GetServiceOrFind<FishSpawnManager>();
+        hardModeManager = GetServiceOrFind<HardModeManager>();
+        
+        // 如果 ServiceLocator 沒有 HardModeManager，嘗試使用單例
+        if (hardModeManager == null)
+        {
+            hardModeManager = HardModeManager.Instance;
+        }
+        
+        // 禁用 FishSpawnManager 的自動生成，由我們手動控制
+        if (fishSpawnManager != null)
+        {
+            fishSpawnManager.SetAutoSpawnOnEnable(false);
+        }
+        
+        // 遊戲開始前先暫停其他系統
+        InitializeGameSystems(false);
         
         // 验证关键依赖
         if (scoreManager == null)
         {
-            Debug.LogError("[GameModeManager] ❌ ScoreManager 未找到！分数系统将无法正常工作");
+            Debug.LogError("[GameModeManager] ScoreManager 未找到！");
         }
         
         // 订阅任务验证事件
@@ -50,7 +64,6 @@ public class GameModeManager : MonoBehaviour
         {
             taskManager.OnTaskValidated.AddListener(OnTaskValidated);
             taskManager.OnSubTaskComplete.AddListener(OnSubTaskComplete);
-            //taskManager.OnTaskFailed.AddListener(OnTaskValidated);
         }
         
         // 初始化時隱藏時間選擇UI
@@ -385,16 +398,35 @@ public class GameModeManager : MonoBehaviour
             // 从DifficultyManager获取任务类型
             TaskType taskType = difficultyManager.GetCurrentTaskType();
             
-            // 生成任务
-            taskManager.GenerateRandomTask(taskType);
-            Debug.Log($"[GameModeManager] 生成新任务：{taskType}");
+            Debug.Log("===========================================");
+            Debug.Log($"[GameModeManager] 🎮 生成新任務 - 任務類型: {taskType}");
+            
+            // 困難模式使用 HardModeManager 生成任務（支援多水桶）
+            if (taskType == TaskType.MultiStage && hardModeManager != null)
+            {
+                Debug.Log($"[GameModeManager] ✅ 使用 HardModeManager 生成困難模式任務（多水桶模式）");
+                hardModeManager.GenerateHardTask();
+            }
+            else if (taskType == TaskType.MultiStage && hardModeManager == null)
+            {
+                Debug.LogWarning($"[GameModeManager] ⚠️ 任務類型是 MultiStage 但 HardModeManager 為 null！");
+                Debug.LogWarning($"[GameModeManager] 回退使用 TaskManager 生成任務");
+                taskManager.GenerateRandomTask(taskType);
+            }
+            else
+            {
+                // 簡單/普通模式使用 TaskManager
+                Debug.Log($"[GameModeManager] 使用 TaskManager 生成任務: {taskType}");
+                taskManager.GenerateRandomTask(taskType);
+            }
+            Debug.Log("===========================================");
         }
         else
         {
             if (taskManager == null)
-                Debug.LogError("[GameModeManager] TaskManager 引用为空！");
+                Debug.LogError("[GameModeManager] ❌ TaskManager 引用为空！");
             if (difficultyManager == null)
-                Debug.LogError("[GameModeManager] DifficultyManager 引用为空！");
+                Debug.LogError("[GameModeManager] ❌ DifficultyManager 引用为空！");
         }
     }
     
@@ -403,13 +435,8 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     private void RegenerateFish()
     {
-        // 使用 ServiceLocator 獲取 BucketEvent
-        BucketEvent bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
-        if (bucketEvent != null)
-        {
-            bucketEvent.ClearBucket();
-            Debug.Log("[GameModeManager] 已清空桶中的鱼");
-        }
+        // 根據當前模式獲取正確的水桶並清空
+        ClearActiveBucket();
         
         if (fishSpawnManager != null && difficultyManager != null)
         {
@@ -430,6 +457,43 @@ public class GameModeManager : MonoBehaviour
                 Debug.LogError("[GameModeManager] FishSpawnManager 引用为空！");
             if (difficultyManager == null)
                 Debug.LogError("[GameModeManager] DifficultyManager 引用为空！");
+        }
+    }
+    
+    /// <summary>
+    /// 清空當前活動的水桶
+    /// </summary>
+    private void ClearActiveBucket()
+    {
+        // 如果有 MultiBucketManager，根據當前模式清空正確的水桶
+        if (MultiBucketManager.Instance != null)
+        {
+            if (!MultiBucketManager.Instance.IsHardMode)
+            {
+                // 普通模式：清空普通水桶
+                BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
+                if (normalBucket != null)
+                {
+                    normalBucket.ClearBucket();
+                    Debug.Log($"[GameModeManager] 已清空普通模式水桶: {normalBucket.gameObject.name}");
+                    return;
+                }
+            }
+            else
+            {
+                // 困難模式：由 MultiBucketManager 清空所有水桶
+                MultiBucketManager.Instance.ClearAllBuckets();
+                Debug.Log("[GameModeManager] 已清空所有困難模式水桶");
+                return;
+            }
+        }
+        
+        // 備用：使用 ServiceLocator 獲取 BucketEvent
+        BucketEvent bucketEvent = ServiceLocator.Instance.Get<BucketEvent>();
+        if (bucketEvent != null)
+        {
+            bucketEvent.ClearBucket();
+            Debug.Log("[GameModeManager] 已清空桶中的鱼");
         }
     }
     
@@ -543,20 +607,14 @@ public class GameModeManager : MonoBehaviour
     /// </summary>
     private void OnTaskValidated(TaskValidationResult result)
     {
-        Debug.Log($"[GameModeManager] 任务验证结果：{result}");
-        
         switch (result)
         {
             case TaskValidationResult.Success:
-                // 任务完成，生成新任务并重新生成鱼
-                Debug.Log("[GameModeManager] 任务完成！生成新任务");
-                
-                // 添加分数
+                // 任务完成，加分并生成新任务
                 if (scoreManager != null)
                 {
                     scoreManager.AddTaskScore();
                 }
-                
                 GenerateNewTask();
                 break;
                 
