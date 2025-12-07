@@ -66,6 +66,13 @@ public class GameModeManager : MonoBehaviour
             taskManager.OnSubTaskComplete.AddListener(OnSubTaskComplete);
         }
         
+        // 訂閱 MultiBucketManager 的完成事件（困難模式專用）
+        if (MultiBucketManager.Instance != null)
+        {
+            MultiBucketManager.Instance.OnAllStagesCompleted.AddListener(OnAllBucketsCompleted);
+            Debug.Log("[GameModeManager] 已訂閱 MultiBucketManager.OnAllStagesCompleted 事件");
+        }
+        
         // 初始化時隱藏時間選擇UI
         HideTimeSelectionUI();
         
@@ -100,6 +107,12 @@ public class GameModeManager : MonoBehaviour
             taskManager.OnTaskValidated.RemoveListener(OnTaskValidated);
             taskManager.OnSubTaskComplete.RemoveListener(OnSubTaskComplete);
            // taskManager.OnTaskFailed.RemoveListener(OnTaskValidated);
+        }
+        
+        // 取消訂閱 MultiBucketManager 事件
+        if (MultiBucketManager.Instance != null)
+        {
+            MultiBucketManager.Instance.OnAllStagesCompleted.RemoveListener(OnAllBucketsCompleted);
         }
     }
     
@@ -650,6 +663,25 @@ public class GameModeManager : MonoBehaviour
         {
             scoreManager.AddSubTaskScore();
         }
+    }
+    
+    /// <summary>
+    /// 困難模式：所有水桶完成回調（平行任務模式專用）
+    /// </summary>
+    private void OnAllBucketsCompleted()
+    {
+        Debug.Log("[GameModeManager] 🎉 困難模式：所有水桶任務完成！");
+        
+        // 加分
+        if (scoreManager != null)
+        {
+            scoreManager.AddTaskScore();
+            Debug.Log("[GameModeManager] ✅ 已添加任務分數");
+        }
+        
+        // 刷新任務：清空所有水桶 + 重新生成魚 + 生成新任務
+        Debug.Log("[GameModeManager] 🔄 準備生成新的困難模式任務...");
+        GenerateNewTask();
     }
     
     /// <summary>

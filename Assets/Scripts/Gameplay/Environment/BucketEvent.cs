@@ -28,6 +28,15 @@ public class BucketEvent : MonoBehaviour
     // 是否被 MultiBucketManager 管理（進行嚴格顏色檢查）
     private bool isMultiBucketManaged = false;
     
+    // 水桶狀態（平行任務模式）
+    public enum BucketStatus
+    {
+        Normal,      // 正常狀態
+        Error,       // 錯誤狀態（等待重試）
+        Completed    // 完成狀態
+    }
+    private BucketStatus currentStatus = BucketStatus.Normal;
+    
     // ========== 多水桶支援 ==========
     [Header("多水桶設定")]
     [Tooltip("此水桶對應的階段索引（0-based）")]
@@ -40,7 +49,10 @@ public class BucketEvent : MonoBehaviour
     [SerializeField] private FishColor targetColor = FishColor.Red;
     
     [Tooltip("魚被彈出時的力道")]
-    [SerializeField] private float ejectForce = 3f; 
+    [SerializeField] private float ejectForce = 3f;
+    
+    [Tooltip("魚進入此桶後的返回點位置（可設為桶子的子物件）")]
+    [SerializeField] private Transform fishReturnPoint; 
 
     private void Awake()
     {
@@ -81,11 +93,25 @@ public class BucketEvent : MonoBehaviour
             {
                 Debug.Log($"[BucketEvent] 多水桶模式檢查 - 目前魚數: {fishGameObjectsInBucket.Count}/{capacity}");
                 
+                // 檢查是否已經處於錯誤狀態
+                if (currentStatus == BucketStatus.Error)
+                {
+                    Debug.LogWarning($"[BucketEvent] 水桶處於錯誤狀態，請按重試按鈕！");
+                    return;
+                }
+                
                 // 檢查容量
                 if (fishGameObjectsInBucket.Count >= capacity)
                 {
                     Debug.LogWarning($"[BucketEvent] 水桶已滿！容量: {capacity}");
-                    EjectFish(other.gameObject);
+                    currentStatus = BucketStatus.Error;
+                    
+                    // 通知 MultiBucketManager 錯誤
+                    if (MultiBucketManager.Instance != null)
+                    {
+                        MultiBucketManager.Instance.OnBucketError?.Invoke(stageIndex, 
+                            $"水桶已滿！只需要 {capacity} 隻魚");
+                    }
                     return;
                 }
                 
@@ -96,7 +122,7 @@ public class BucketEvent : MonoBehaviour
                 if (fishColor != targetColor)
                 {
                     Debug.LogWarning($"[BucketEvent] 顏色錯誤！需要 {FishColorHelper.GetDisplayName(targetColor)}，但放入了 {FishColorHelper.GetDisplayName(fishColor)}");
-                    EjectFish(other.gameObject);
+                    currentStatus = BucketStatus.Error;
                     
                     // 通知 MultiBucketManager
                     if (MultiBucketManager.Instance != null)
@@ -127,6 +153,14 @@ public class BucketEvent : MonoBehaviour
                 {
                     fishEntryOrder.Add(other.gameObject);
                     lockedFish.Add(other.gameObject);
+                    
+                    // 設置 Rigidbody 為 kinematic，阻止抓取
+                    Rigidbody fishRb = other.GetComponent<Rigidbody>();
+                    if (fishRb != null)
+                    {
+                        fishRb.isKinematic = true;
+                        Debug.Log($"[BucketEvent] 困難模式：{fishTag} 已設為 kinematic（不可抓取）");
+                    }
                     
                     // 通知 MultiBucketManager（多水桶模式）
                     if (MultiBucketManager.Instance != null)
@@ -175,10 +209,21 @@ public class BucketEvent : MonoBehaviour
             // 困難模式：如果魚已鎖定，阻止離開（強制放回）
             if (isHardMode && lockedFish.Contains(other.gameObject))
             {
-                Debug.LogWarning($"[BucketEvent] 困難模式：{fishTag} 已鎖定，無法取出！");
+                Debug.LogWarning($"[BucketEvent] 困難模式：{fishTag} 已鎖定，無法取出！強制放回桶內");
+                
+                // 強制將魚推回桶內中心
+                Vector3 bucketCenter = transform.position;
+                other.transform.position = bucketCenter;
+                
+                // 重置速度
+                Rigidbody fishRb = other.GetComponent<Rigidbody>();
+                if (fishRb != null)
+                {
+                    fishRb.linearVelocity = Vector3.zero;
+                    fishRb.angularVelocity = Vector3.zero;
+                }
                 
                 // 可選：這裡可以觸發視覺/聽覺反饋
-                // 注意：物理上阻止需要在 GrabbableFish 中處理
                 return;
             }
             
@@ -458,6 +503,14 @@ public class BucketEvent : MonoBehaviour
                 // 解除鎖定
                 lockedFish.Remove(fish);
                 
+                // 解除 kinematic，允許抓取
+                Rigidbody fishRb = fish.GetComponent<Rigidbody>();
+                if (fishRb != null)
+                {
+                    fishRb.isKinematic = false;
+                    Debug.Log($"[BucketEvent] 解除 kinematic，魚可以被抓取了");
+                }
+                
                 // 重置魚的狀態
                 FishForwardMovement fishMovement = fish.GetComponent<FishForwardMovement>();
                 if (fishMovement != null)
@@ -516,6 +569,28 @@ public class BucketEvent : MonoBehaviour
     public int GetStageIndex() => stageIndex;
     
     /// <summary>
+    /// 獲取此水桶的魚返回點位置
+    /// </summary>
+    public Transform GetFishReturnPoint()
+    {
+        // 如果有設定專屬返回點，使用它
+        if (fishReturnPoint != null)
+        {
+            return fishReturnPoint;
+        }
+        
+        // 備用方案：嘗試找子物件 "FishReturnPoint"
+        Transform childPoint = transform.Find("FishReturnPoint");
+        if (childPoint != null)
+        {
+            return childPoint;
+        }
+        
+        // 最後備用：返回水桶自身的 Transform
+        return transform;
+    }
+    
+    /// <summary>
     /// 設置此水桶的容量限制
     /// </summary>
     public void SetCapacity(int cap)
@@ -564,13 +639,19 @@ public class BucketEvent : MonoBehaviour
             fishMovement.isInBucket = false;
         }
         
+        // 解除 kinematic，允許抓取
+        Rigidbody rb = fish.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+        }
+        
         // 計算彈出方向（向上並向外）
         Vector3 ejectDirection = (fish.transform.position - transform.position).normalized;
         ejectDirection.y = 1f; // 確保向上彈
         ejectDirection = ejectDirection.normalized;
         
         // 應用彈出力
-        Rigidbody rb = fish.GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
@@ -631,5 +712,28 @@ public class BucketEvent : MonoBehaviour
         }
         
         return true;
+    }
+    
+    /// <summary>
+    /// 獲取當前水桶狀態
+    /// </summary>
+    public BucketStatus GetStatus() => currentStatus;
+    
+    /// <summary>
+    /// 設置水桶狀態
+    /// </summary>
+    public void SetStatus(BucketStatus status)
+    {
+        currentStatus = status;
+        Debug.Log($"[BucketEvent] {gameObject.name} 狀態設置為: {status}");
+    }
+    
+    /// <summary>
+    /// 重置水桶狀態為正常
+    /// </summary>
+    public void ResetStatus()
+    {
+        currentStatus = BucketStatus.Normal;
+        Debug.Log($"[BucketEvent] {gameObject.name} 狀態已重置為 Normal");
     }
 }

@@ -15,7 +15,7 @@ public class HardDifficultyConfig : DifficultyConfig
     
     [Tooltip("每個子任務的魚數量範圍")]
     public int minFishPerSubTask = 1;
-    public int maxFishPerSubTask = 2;
+    public int maxFishPerSubTask = 3;
     
     public HardDifficultyConfig()
     {
@@ -43,8 +43,7 @@ public class HardDifficultyConfig : DifficultyConfig
         {
             "redFish",
             "grayFish",
-            "greenFish",
-            "yellowFish"
+            "greenFish"
         };
 
         // 限制在指定數量內

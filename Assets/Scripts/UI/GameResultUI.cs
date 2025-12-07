@@ -33,18 +33,31 @@ public class GameResultUI : MonoBehaviour
     [SerializeField]DifficultyManager difficultyManager;
     //DifficultyConfig currentDifficulty;
 
-    [Header("评价设置")]
-    [Tooltip("S级评价分数线")]
+    [Header("評價設定")]
+    [Tooltip("S級評價分數線")]
     [SerializeField] private int sRankThreshold = 1000;
     
-    [Tooltip("A级评价分数线")]
+    [Tooltip("A級評價分數線")]
     [SerializeField] private int aRankThreshold = 750;
     
-    [Tooltip("B级评价分数线")]
+    [Tooltip("B級評價分數線")]
     [SerializeField] private int bRankThreshold = 500;
     
-    [Tooltip("C级评价分数线")]
+    [Tooltip("C級評價分數線")]
     [SerializeField] private int cRankThreshold = 250;
+    
+    [Header("遊戲結束時隱藏的物件")]
+    [Tooltip("遊戲結束時需要隱藏的 GameObject 列表（水桶、魚、按鈕等）")]
+    [SerializeField] private GameObject[] objectsToHideOnGameEnd;
+    
+    [Tooltip("是否自動找到並隱藏所有魚")]
+    [SerializeField] private bool autoHideAllFish = true;
+    
+    [Tooltip("是否隱藏水桶")]
+    [SerializeField] private bool hideBuckets = true;
+    
+    [Tooltip("是否隱藏UI按鈕（確認、重試等）")]
+    [SerializeField] private bool hideGameplayButtons = true;
 
     
     void Awake()
@@ -134,7 +147,7 @@ public class GameResultUI : MonoBehaviour
     {
         Debug.Log($"[GameResultUI] 显示游戏结算 - 最终得分: {result.finalScore}");
         
-        // 显示结算面板
+        // ⭐ 先顯示結束面板，避免提前關閉物件導致無法顯示
         if (resultPanel != null)
         {
             resultPanel.SetActive(true);
@@ -147,6 +160,8 @@ public class GameResultUI : MonoBehaviour
         UpdateDifficulty(result.difficultyMultiplier);
         UpdateRank(result.finalScore);
         
+        // 最後才隱藏遊戲物件（確保結束面板已完全顯示）
+        HideGameplayObjects();
     }
     
     /// <summary>
@@ -302,5 +317,115 @@ public class GameResultUI : MonoBehaviour
         #else
         Application.Quit();
         #endif
+    }
+    
+    /// <summary>
+    /// 隱藏遊戲進行時的物件（水桶、魚、按鈕等）
+    /// </summary>
+    private void HideGameplayObjects()
+    {
+        Debug.Log("[GameResultUI] 🎮 開始隱藏遊戲物件...");
+        int hiddenCount = 0;
+        
+        // 1. 隱藏手動指定的物件列表
+        if (objectsToHideOnGameEnd != null && objectsToHideOnGameEnd.Length > 0)
+        {
+            foreach (GameObject obj in objectsToHideOnGameEnd)
+            {
+                if (obj != null && obj.activeSelf)
+                {
+                    obj.SetActive(false);
+                    hiddenCount++;
+                    Debug.Log($"[GameResultUI] 隱藏物件: {obj.name}");
+                }
+            }
+        }
+        
+        // 2. 自動隱藏所有魚
+        if (autoHideAllFish)
+        {
+            // 使用 Tag 尋找所有魚（使用 try-catch 避免 Tag 不存在的錯誤）
+            string[] fishTags = { "redFish", "grayFish", "greenFish", "yellowFish" };
+            foreach (string fishTag in fishTags)
+            {
+                try
+                {
+                    GameObject[] fishes = GameObject.FindGameObjectsWithTag(fishTag);
+                    foreach (GameObject fish in fishes)
+                    {
+                        if (fish != null && fish.activeSelf)
+                        {
+                            fish.SetActive(false);
+                            hiddenCount++;
+                        }
+                    }
+                }
+                catch (UnityException ex)
+                {
+                    // Tag 不存在時忽略錯誤
+                    Debug.LogWarning($"[GameResultUI] Tag '{fishTag}' 不存在或未定義，跳過: {ex.Message}");
+                }
+            }
+            Debug.Log($"[GameResultUI] 隱藏所有魚完成");
+        }
+        
+        // 3. 隱藏水桶
+        if (hideBuckets)
+        {
+            // 尋找所有 BucketEvent 組件的物件
+            BucketEvent[] buckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
+            foreach (BucketEvent bucket in buckets)
+            {
+                if (bucket != null && bucket.gameObject.activeSelf)
+                {
+                    bucket.gameObject.SetActive(false);
+                    hiddenCount++;
+                    Debug.Log($"[GameResultUI] 隱藏水桶: {bucket.gameObject.name}");
+                }
+            }
+            
+            // 也隱藏 MultiBucketManager 管理的水桶
+            if (MultiBucketManager.Instance != null)
+            {
+                MultiBucketManager.Instance.HideAllBuckets();
+                Debug.Log($"[GameResultUI] 隱藏 MultiBucketManager 的所有水桶");
+            }
+        }
+        
+        // 4. 隱藏遊戲操作按鈕
+        if (hideGameplayButtons)
+        {
+            // 隱藏確認按鈕
+            ConfirmButtonHandler confirmButton = FindFirstObjectByType<ConfirmButtonHandler>();
+            if (confirmButton != null && confirmButton.gameObject.activeSelf)
+            {
+                confirmButton.gameObject.SetActive(false);
+                hiddenCount++;
+                Debug.Log($"[GameResultUI] 隱藏確認按鈕");
+            }
+            
+            // 隱藏重試按鈕
+            RetryButtonHandler retryButton = FindFirstObjectByType<RetryButtonHandler>();
+            if (retryButton != null && retryButton.gameObject.activeSelf)
+            {
+                retryButton.gameObject.SetActive(false);
+                hiddenCount++;
+                Debug.Log($"[GameResultUI] 隱藏重試按鈕");
+            }
+            
+            // 隱藏所有水桶重試按鈕
+            BucketRetryButton[] bucketRetryButtons = FindObjectsByType<BucketRetryButton>(FindObjectsSortMode.None);
+            foreach (BucketRetryButton btn in bucketRetryButtons)
+            {
+                if (btn != null && btn.gameObject.activeSelf)
+                {
+                    btn.gameObject.SetActive(false);
+                    hiddenCount++;
+                }
+            }
+            Debug.Log($"[GameResultUI] 隱藏所有水桶重試按鈕");
+        }
+        
+        Debug.Log($"[GameResultUI] ✅ 完成！共隱藏 {hiddenCount} 個物件");
     }
 }

@@ -18,6 +18,19 @@ public class ButtonEvent : MonoBehaviour
     
     private float lastPressTime = -999f; // 上次按下的時間
     
+    [Header("Audio")]
+    [Tooltip("按鈕按下時的音效")]
+    [SerializeField] private AudioClip buttonPressSound;
+    
+    [Tooltip("按鈕釋放時的音效（可選）")]
+    [SerializeField] private AudioClip buttonReleaseSound;
+    
+    [Tooltip("AudioSource 組件（自動獲取或手動指定）")]
+    [SerializeField] private AudioSource audioSource;
+    
+    [Tooltip("音效音量（0-1）")]
+    [SerializeField] [Range(0f, 1f)] private float soundVolume = 1f;
+    
     [Header("Events")]
     [Tooltip("按鈕被按下時觸發")]
     public UnityEvent onButtonPressed;
@@ -29,6 +42,20 @@ public class ButtonEvent : MonoBehaviour
     void Start()
     {
         Debug.Log($"[ButtonEvent] {gameObject.name} 已初始化，觸發標籤：{triggerTag}");
+        
+        // 自動獲取 AudioSource 組件
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            
+            // 如果沒有 AudioSource，嘗試添加一個
+            if (audioSource == null && (buttonPressSound != null || buttonReleaseSound != null))
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+                Debug.Log($"[ButtonEvent] 已自動添加 AudioSource 組件");
+            }
+        }
     }
     
     void Update()
@@ -64,6 +91,9 @@ public class ButtonEvent : MonoBehaviour
             // 設置為按下狀態
             isPressed = true;
             
+            // 播放按下音效
+            PlayButtonPressSound();
+            
             // 觸發按下事件
             onButtonPressed?.Invoke();
             lastPressTime = Time.time;
@@ -80,6 +110,9 @@ public class ButtonEvent : MonoBehaviour
             {
                 isPressed = false;
                 
+                // 播放釋放音效
+                PlayButtonReleaseSound();
+                
                 // 觸發釋放事件
                 onButtonReleased?.Invoke();
             }
@@ -92,6 +125,7 @@ public class ButtonEvent : MonoBehaviour
     public void ResetButton()
     {
         isPressed = false;
+        lastPressTime = -999f; // 重置冷卻時間
     }
     
     /// <summary>
@@ -128,5 +162,27 @@ public class ButtonEvent : MonoBehaviour
     {
         float remaining = cooldownTime - (Time.time - lastPressTime);
         return Mathf.Max(0f, remaining);
+    }
+    
+    /// <summary>
+    /// 播放按鈕按下音效
+    /// </summary>
+    private void PlayButtonPressSound()
+    {
+        if (buttonPressSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(buttonPressSound, soundVolume);
+        }
+    }
+    
+    /// <summary>
+    /// 播放按鈕釋放音效
+    /// </summary>
+    private void PlayButtonReleaseSound()
+    {
+        if (buttonReleaseSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(buttonReleaseSound, soundVolume);
+        }
     }
 }

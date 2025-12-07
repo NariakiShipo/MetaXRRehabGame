@@ -37,6 +37,7 @@ TagManager:
   - QDSUIToggleCheckboxRadio
   - Scooper
   - grayFish
+  - 'yellowFish '
   layers:
   - Default
   - TransparentFX

@@ -251,10 +251,9 @@ public class MultiBucketManager : MonoBehaviour
                     Debug.LogError($"    - ❌ BucketEvent 為 null！水桶無法正常運作");
                 }
                 
-                // 設置視覺狀態
-                BucketState state = i == 0 ? BucketState.Active : BucketState.Inactive;
-                SetBucketVisualState(i, state);
-                Debug.Log($"    - 視覺狀態: {state}");
+                // 平行任務模式：所有水桶同時啟用
+                SetBucketVisualState(i, BucketState.Active);
+                Debug.Log($"    - 視覺狀態: Active (平行任務模式)");
             }
             else
             {
@@ -282,9 +281,32 @@ public class MultiBucketManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 隱藏所有水桶
+    /// 隱藏所有水桶（包括普通模式和困難模式）
     /// </summary>
     public void HideAllBuckets()
+    {
+        Debug.Log("[MultiBucketManager] 🙈 隱藏所有水桶");
+        
+        // 隱藏困難模式水桶
+        foreach (var bucket in bucketPool)
+        {
+            if (bucket != null)
+            {
+                bucket.SetActive(false);
+            }
+        }
+        
+        // 隱藏普通模式水桶
+        if (normalModeBucket != null)
+        {
+            normalModeBucket.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// 隱藏所有水桶
+    /// </summary>
+    private void HideAllBuckets_Old()
     {
         for (int i = 0; i < bucketPool.Count; i++)
         {
@@ -531,29 +553,68 @@ public class MultiBucketManager : MonoBehaviour
             if (bucketIndex < bucketLabels.Count && bucketLabels[bucketIndex] != null)
             {
                 string colorName = FishColorHelper.GetDisplayName(stage.targetColor);
-                bucketLabels[bucketIndex].text = $"✓ 任務 {bucketIndex + 1}\n{stage.count} 隻{colorName}";
+                bucketLabels[bucketIndex].text = $"V 任務 {bucketIndex + 1}\n{stage.count} 隻{colorName}";
             }
             
-            // 檢查下一個水桶
-            ActivateNextBucket(bucketIndex);
+            // 檢查是否所有水桶都完成
+            CheckAllBucketsCompleted();
         }
     }
     
     /// <summary>
-    /// 啟用下一個水桶
+    /// 檢查是否所有水桶都完成
     /// </summary>
-    private void ActivateNextBucket(int completedIndex)
+    private void CheckAllBucketsCompleted()
     {
-        int nextIndex = completedIndex + 1;
-        
-        if (nextIndex < activeBucketCount)
+        bool allCompleted = true;
+        for (int i = 0; i < activeBucketCount; i++)
         {
-            SetBucketVisualState(nextIndex, BucketState.Active);
-            Debug.Log($"[MultiBucketManager] 啟用水桶 {nextIndex + 1}");
+            if (!bucketCompleted[i])
+            {
+                allCompleted = false;
+                break;
+            }
         }
-        else
+        
+        if (allCompleted)
         {
-            Debug.Log("[MultiBucketManager] 所有水桶都已完成！");
+            Debug.Log("[MultiBucketManager] ✅ 所有水桶都已完成！");
+            OnAllStagesCompleted?.Invoke();
+        }
+    }
+    
+    /// <summary>
+    /// 重置單一水桶（獨立重試功能）
+    /// </summary>
+    public void ResetSingleBucket(int bucketIndex)
+    {
+        if (bucketIndex < 0 || bucketIndex >= activeBucketCount)
+        {
+            Debug.LogError($"[MultiBucketManager] 無效的水桶索引: {bucketIndex}");
+            return;
+        }
+        
+        if (bucketEvents[bucketIndex] != null)
+        {
+            Debug.Log($"[MultiBucketManager] 🔄 重置水桶 {bucketIndex + 1}");
+            
+            // 釋放水桶中的魚
+            bucketEvents[bucketIndex].RetryHardModeTask();
+            
+            // 重置 BucketEvent 狀態
+            bucketEvents[bucketIndex].ResetStatus();
+            
+            // 重置完成狀態
+            bucketCompleted[bucketIndex] = false;
+            
+            // 重置視覺狀態為 Active
+            SetBucketVisualState(bucketIndex, BucketState.Active);
+            
+            // 重置標籤
+            if (bucketIndex < currentStages.Count)
+            {
+                UpdateBucketLabel(bucketIndex, currentStages[bucketIndex]);
+            }
         }
     }
     
@@ -617,8 +678,8 @@ public class MultiBucketManager : MonoBehaviour
                 bucketEvents[i].RetryHardModeTask();
             }
             
-            // 重置視覺狀態
-            SetBucketVisualState(i, i == 0 ? BucketState.Active : BucketState.Inactive);
+            // 平行任務模式：所有水桶重置為 Active
+            SetBucketVisualState(i, BucketState.Active);
             
             // 重置標籤
             if (i < currentStages.Count)

@@ -60,17 +60,18 @@ public class GrabbableFish : MonoBehaviour
     /// </summary>
     public void OnFishGrabbed()
     {
-        // 困難模式：檢查魚是否被鎖定
-        if (bucketEvent != null && bucketEvent.IsFishLocked(gameObject))
+        // 困難模式：檢查魚是否被任何水桶鎖定
+        if (IsLockedInAnyBucket())
         {
             Debug.LogWarning($"[GrabbableFish] {fishColor} 已在困難模式下鎖定，無法抓取！");
             isLockedInBucket = true;
             
+            // 強制將魚放回桶內
+            ForceFishBackToBucket();
+            
             // 這裡可以添加視覺/聽覺反饋
             // 例如播放"嗡"的錯誤音效、魚閃爍紅色等
             
-            // 強制放開（如果 Grabbable 支持）
-            // 由於 Meta XR SDK 的限制，可能需要在 FixedUpdate 中處理
             return;
         }
         
@@ -90,6 +91,65 @@ public class GrabbableFish : MonoBehaviour
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+        }
+    }
+    
+    /// <summary>
+    /// 檢查魚是否被任何水桶鎖定
+    /// </summary>
+    private bool IsLockedInAnyBucket()
+    {
+        // 如果有 MultiBucketManager 且為困難模式
+        if (MultiBucketManager.Instance != null && MultiBucketManager.Instance.IsHardMode)
+        {
+            // 檢查所有困難模式水桶
+            for (int i = 0; i < MultiBucketManager.Instance.GetActiveBucketCount(); i++)
+            {
+                BucketEvent bucket = MultiBucketManager.Instance.GetBucketEvent(i);
+                if (bucket != null && bucket.IsFishLocked(gameObject))
+                {
+                    bucketEvent = bucket; // 記錄是哪個桶
+                    return true;
+                }
+            }
+        }
+        
+        // 備用：檢查預設的 bucketEvent
+        if (bucketEvent != null && bucketEvent.IsFishLocked(gameObject))
+        {
+            return true;
+        }
+        
+        // 更完整的檢查：找到所有 BucketEvent 並檢查
+        BucketEvent[] allBuckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
+        foreach (var bucket in allBuckets)
+        {
+            if (bucket.IsFishLocked(gameObject))
+            {
+                bucketEvent = bucket; // 記錄是哪個桶
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// 強制將魚放回桶內
+    /// </summary>
+    private void ForceFishBackToBucket()
+    {
+        if (bucketEvent != null)
+        {
+            // 將魚傳送回桶內中心
+            transform.position = bucketEvent.transform.position;
+            
+            // 重置速度
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
         }
     }
 

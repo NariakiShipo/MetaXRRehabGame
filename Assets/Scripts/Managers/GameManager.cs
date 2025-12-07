@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
             timer -= Time.deltaTime;
             float minutes = Mathf.Floor(timer / 60f);
             float seconds = Mathf.Floor(timer % 60f);
-            timerText.text = "Time: " + minutes.ToString("00") + ":" + seconds.ToString("00");
+            timerText.text = "剩餘時間: " + minutes.ToString("00") + ":" + seconds.ToString("00");
         }
         else if (timer <= 0f && !isEnd && isGameStarted)
         {

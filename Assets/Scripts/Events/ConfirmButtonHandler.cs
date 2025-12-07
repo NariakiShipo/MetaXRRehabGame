@@ -72,14 +72,35 @@ public class ConfirmButtonHandler : MonoBehaviour
     /// </summary>
     public void OnConfirmButtonPressed()
     {
-        // 獲取當前應該使用的水桶
-        BucketEvent activeBucket = GetActiveBucketEvent();
-        
         if (taskManager == null)
         {
             Debug.LogWarning("[ConfirmButtonHandler] TaskManager 未设置");
             return;
         }
+        
+        // 困難模式平行任務：使用 MultiBucketManager 驗證
+        if (MultiBucketManager.Instance != null && MultiBucketManager.Instance.IsHardMode)
+        {
+            Debug.Log("[ConfirmButtonHandler] 困難模式平行任務驗證");
+            
+            bool allValid = MultiBucketManager.Instance.ValidateAllBuckets();
+            
+            if (allValid)
+            {
+                audioSource.PlayOneShot(correctSound);
+                Debug.Log("[ConfirmButtonHandler] 所有水桶任務完成！");
+                // MultiBucketManager.OnAllStagesCompleted 會觸發 GameModeManager.OnAllBucketsCompleted
+            }
+            else
+            {
+                audioSource.PlayOneShot(incorrectSound);
+                Debug.Log("[ConfirmButtonHandler] 尚有水桶未完成或有錯誤");
+            }
+            return;
+        }
+        
+        // 普通模式或舊版困難模式：使用原有驗證邏輯
+        BucketEvent activeBucket = GetActiveBucketEvent();
         
         if (activeBucket == null)
         {

@@ -176,6 +176,59 @@ public class FishForwardMovement : MonoBehaviour
         {
             isInBucket = true;
             arrivedAtBucketPoint = true;
+            
+            // 動態更新返回點：從碰撞到的桶子取得對應的返回點
+            UpdateBucketReturnPoint(other.gameObject);
         }
+    }
+    
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Bucket"))
+        {
+            isInBucket = true;
+            arrivedAtBucketPoint = true;
+            
+            // 動態更新返回點：從碰撞到的桶子取得對應的返回點
+            UpdateBucketReturnPoint(other.gameObject);
+        }
+    }
+    
+    /// <summary>
+    /// 從桶子物件取得對應的返回點並更新
+    /// </summary>
+    private void UpdateBucketReturnPoint(GameObject bucket)
+    {
+        // 優先從 BucketEvent 取得設定的返回點
+        BucketEvent bucketEvent = bucket.GetComponent<BucketEvent>();
+        if (bucketEvent == null)
+        {
+            // 嘗試從父物件取得
+            bucketEvent = bucket.GetComponentInParent<BucketEvent>();
+        }
+        
+        if (bucketEvent != null)
+        {
+            Transform returnPoint = bucketEvent.GetFishReturnPoint();
+            if (returnPoint != null)
+            {
+                bucketReturnPoint = returnPoint.gameObject;
+                Debug.Log($"[FishForwardMovement] 更新返回點為: {bucketReturnPoint.name} (來自 {bucket.name})");
+                return;
+            }
+        }
+        
+        // 備用方案：嘗試找桶子的子物件 "FishReturnPoint"
+        Transform childReturnPoint = bucket.transform.Find("FishReturnPoint");
+        if (childReturnPoint != null)
+        {
+            bucketReturnPoint = childReturnPoint.gameObject;
+            Debug.Log($"[FishForwardMovement] 更新返回點為子物件: {bucketReturnPoint.name}");
+            return;
+        }
+        
+        // 最後備用：使用桶子本身的位置
+        bucketReturnPoint = bucket;
+        Debug.Log($"[FishForwardMovement] 使用桶子本身作為返回點: {bucket.name}");
     }
 }
