@@ -339,18 +339,47 @@ public class TaskManager : MonoBehaviour
         switch (task.taskType)
         {
             case TaskType.CountOnly:
-                return $"撈 {task.targetCount} 隻魚";
+                return $"撈 {task.targetCount} 隻";
                 
             case TaskType.ColorCount:
-                return $"撈 {task.targetCount} 隻{GetColorDisplayName(task.targetColor)}的魚";
+                return $"撈 {task.targetCount} 隻";
                 
             case TaskType.MultiStage:
                 SubTask currentSubTask = task.GetCurrentSubTask();
                 if (currentSubTask != null)
                 {
-                    return $"撈 {currentSubTask.count} 隻{GetColorDisplayName(currentSubTask.color)}的魚";
+                    return $"撈 {currentSubTask.count} 隻";
                 }
                 return "多阶段任务";
+                
+            default:
+                return "";
+        }
+    }
+    
+    /// <summary>
+    /// 獲取任务的顏色 key（用於 UI 圖片顯示）
+    /// </summary>
+    public string GetTaskColorKey(TaskData task)
+    {
+        if (task == null)
+            return "";
+        
+        switch (task.taskType)
+        {
+            case TaskType.CountOnly:
+                return ""; // 沒有顏色要求
+                
+            case TaskType.ColorCount:
+                return task.targetColor;
+                
+            case TaskType.MultiStage:
+                SubTask currentSubTask = task.GetCurrentSubTask();
+                if (currentSubTask != null)
+                {
+                    return currentSubTask.color;
+                }
+                return "";
                 
             default:
                 return "";

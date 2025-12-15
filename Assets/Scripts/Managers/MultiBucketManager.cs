@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using TMPro;
+using UnityEngine.UI;
 
 /// <summary>
 /// 多水桶管理器 - 管理困難模式中的多個水桶
@@ -23,8 +24,21 @@ public class MultiBucketManager : MonoBehaviour
     
     [Header("水桶標籤（選用）")]
     [Tooltip("每個水桶上方顯示任務的文字")]
-    [SerializeField] private List<TMP_Text> bucketLabels = new List<TMP_Text>();
+    [SerializeField] private List<TMP_Text> bucketLabels = new List<TMP_Text>();    
+    [Tooltip("每個水桶上方顯示魚顏色的圖片")]
+    [SerializeField] private List<Image> bucketFishImages = new List<Image>();
     
+    [Header("魚顏色圖片 Sprites")]
+    [Tooltip("紅色魚的圖片")]
+    [SerializeField] private Sprite redFishSprite;
+    [Tooltip("灰色魚的圖片")]
+    [SerializeField] private Sprite grayFishSprite;
+    [Tooltip("綠色魚的圖片")]
+    [SerializeField] private Sprite greenFishSprite;
+    [Tooltip("黃色魚的圖片")]
+    [SerializeField] private Sprite yellowFishSprite;
+    [Tooltip("藍色魚的圖片")]
+    [SerializeField] private Sprite blueFishSprite;    
     [Header("水桶容量設定")]
     [Tooltip("是否在水桶滿時彈出多餘的魚")]
     [SerializeField] private bool ejectExcessFish = true;
@@ -275,8 +289,46 @@ public class MultiBucketManager : MonoBehaviour
     {
         if (index < bucketLabels.Count && bucketLabels[index] != null)
         {
-            string colorName = FishColorHelper.GetDisplayName(stage.targetColor);
-            bucketLabels[index].text = $"任務 {index + 1}\n{stage.count} 隻{colorName}";
+            // 只顯示數量
+            bucketLabels[index].text = $"撈 {stage.count} 隻";
+        }
+        
+        // 更新魚圖片
+        if (index < bucketFishImages.Count && bucketFishImages[index] != null)
+        {
+            Sprite fishSprite = GetFishSprite(stage.targetColor);
+            if (fishSprite != null)
+            {
+                bucketFishImages[index].sprite = fishSprite;
+                bucketFishImages[index].enabled = true;
+            }
+            else
+            {
+                bucketFishImages[index].enabled = false;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 根據魚顏色獲取對應的 Sprite
+    /// </summary>
+    private Sprite GetFishSprite(FishColor color)
+    {
+        switch (color)
+        {
+            case FishColor.Red:
+                return redFishSprite;
+            case FishColor.Gray:
+                return grayFishSprite;
+            case FishColor.Green:
+                return greenFishSprite;
+            case FishColor.Yellow:
+                return yellowFishSprite;
+            case FishColor.Blue:
+                return blueFishSprite;
+            default:
+                Debug.LogWarning($"[MultiBucketManager] 未知的魚顏色: {color}");
+                return null;
         }
     }
     

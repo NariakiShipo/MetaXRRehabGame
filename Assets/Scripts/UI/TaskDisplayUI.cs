@@ -11,10 +11,23 @@ public class TaskDisplayUI : MonoBehaviour
     [Header("UI引用")]
     [SerializeField] private TextMeshProUGUI taskDescriptionText;   // 任务描述文本
     [SerializeField] private TextMeshProUGUI errorMessageText;      // 错误信息文本
+    [SerializeField] private Image taskFishImage;                   // 任务魚圖片（簡單/普通模式）
     
     [Header("困難模式 UI")]
     [SerializeField] private TextMeshProUGUI stageProgressText;     // 階段進度文本 (例: "階段 2/5")
     [SerializeField] private TextMeshProUGUI currentStageText;      // 當前階段描述
+    
+    [Header("魚顏色圖片 Sprites")]
+    [Tooltip("紅色魚的圖片")]
+    [SerializeField] private Sprite redFishSprite;
+    [Tooltip("灰色魚的圖片")]
+    [SerializeField] private Sprite grayFishSprite;
+    [Tooltip("綠色魚的圖片")]
+    [SerializeField] private Sprite greenFishSprite;
+    [Tooltip("黃色魚的圖片")]
+    [SerializeField] private Sprite yellowFishSprite;
+    [Tooltip("藍色魚的圖片")]
+    [SerializeField] private Sprite blueFishSprite;
     
     [Header("错误信息配置")]
     [SerializeField] private float errorMessageDuration = 2f;       // 错误信息显示时长
@@ -34,12 +47,14 @@ public class TaskDisplayUI : MonoBehaviour
             Debug.LogError("[TaskDisplayUI] 找不到TaskManager!");
         }
         
-        // 獲取 HardModeManager 引用
-        hardModeManager = HardModeManager.Instance;
+       
     }
     
     private void OnEnable()
     {
+         // 獲取 HardModeManager 引用
+        hardModeManager = HardModeManager.Instance;
+
         if (taskManager != null)
         {
             // 订阅事件
@@ -87,8 +102,12 @@ public class TaskDisplayUI : MonoBehaviour
             hardModeManager = HardModeManager.Instance;
         }
         
+
+        
+        
         if (hardModeManager != null)
         {
+            hardModeManager.OnTaskGenerated.AddListener(hideTaskDescription);
             hardModeManager.OnStageAdvanced.AddListener(OnHardModeStageAdvanced);
             hardModeManager.OnTaskCompleted.AddListener(OnHardModeTaskCompleted);
             hardModeManager.OnSequenceError.AddListener(OnHardModeSequenceError);
@@ -106,6 +125,24 @@ public class TaskDisplayUI : MonoBehaviour
             hardModeManager.OnStageAdvanced.RemoveListener(OnHardModeStageAdvanced);
             hardModeManager.OnTaskCompleted.RemoveListener(OnHardModeTaskCompleted);
             hardModeManager.OnSequenceError.RemoveListener(OnHardModeSequenceError);
+        }
+    }
+    
+    /// <summary>
+    /// 困難模式任務生成時隱藏任務描述和魚圖片
+    /// </summary>
+    private void hideTaskDescription(HardModeTask hardTask)
+    {
+        // 困難模式：顯示特殊提示文字，不顯示圖片
+        if (taskDescriptionText != null)
+        {
+            taskDescriptionText.text = "請根據右邊的提示完成任務";
+        }
+        
+        // 關閉魚圖片
+        if (taskFishImage != null)
+        {
+            taskFishImage.enabled = false;
         }
     }
     
@@ -154,6 +191,8 @@ public class TaskDisplayUI : MonoBehaviour
         {
             currentStageText.text = hardModeManager.GetCurrentStageInstruction();
         }
+
+       
     }
     
     /// <summary>
@@ -200,15 +239,13 @@ public class TaskDisplayUI : MonoBehaviour
         {
             case TaskValidationResult.Success:
                 // 任务完成，可以显示完成信息或清空UI
-                if (taskDescriptionText != null)
-                {
-                    taskDescriptionText.text = "任務完成！";
-                }
+                Debug.Log("[TaskDisplayUI] 任务完成！");
                 break;
                 
             case TaskValidationResult.Failed:
                 // 任务失败（OnTaskFailed 會處理錯誤訊息）
                 Debug.Log("[TaskDisplayUI] 任務失敗，OnTaskFailed 將顯示錯誤訊息");
+                ShowErrorMessage("任務失敗，請重新嘗試");
                 break;
                 
             case TaskValidationResult.Incomplete:
@@ -268,9 +305,36 @@ public class TaskDisplayUI : MonoBehaviour
             return;
         }
         
-        string description = taskManager.GetTaskDescription(task);
-        taskDescriptionText.text = description;
-        Debug.Log($"[TaskDisplayUI] 更新任务描述: {description}");
+        if(task.taskType != TaskType.MultiStage)
+        {
+            // 簡單/普通模式：獲取任务描述和顏色信息
+            string description = taskManager.GetTaskDescription(task);
+            string colorKey = taskManager.GetTaskColorKey(task);
+            
+            taskDescriptionText.text = description;
+            
+            // 更新魚圖片（只有在有顏色要求時顯示）
+            if (!string.IsNullOrEmpty(colorKey) && taskFishImage != null)
+            {
+                Sprite fishSprite = GetFishSpriteByColorKey(colorKey);
+                if (fishSprite != null)
+                {
+                    taskFishImage.sprite = fishSprite;
+                    taskFishImage.enabled = true;
+                }
+                else
+                {
+                    taskFishImage.enabled = false;
+                }
+            }
+            else if (taskFishImage != null)
+            {
+                // CountOnly 模式不需要顯示魚圖片
+                taskFishImage.enabled = false;
+            }
+        }
+        
+        Debug.Log($"[TaskDisplayUI] 更新任务描述: {taskDescriptionText.text}");
         Debug.Log($"[TaskDisplayUI] TextMeshPro 组件状态: enabled={taskDescriptionText.enabled}, gameObject.activeSelf={taskDescriptionText.gameObject.activeSelf}");
     }
     
@@ -357,6 +421,33 @@ public class TaskDisplayUI : MonoBehaviour
         {
             taskDescriptionText.text = "";
         }
+        if (taskFishImage != null)
+        {
+            taskFishImage.enabled = false;
+        }
         HideErrorMessage();
+    }
+    
+    /// <summary>
+    /// 根據魚顏色 key 獲取對應的 Sprite
+    /// </summary>
+    private Sprite GetFishSpriteByColorKey(string colorKey)
+    {
+        switch (colorKey.ToLower())
+        {
+            case "redfish":
+                return redFishSprite;
+            case "grayfish":
+                return grayFishSprite;
+            case "greenfish":
+                return greenFishSprite;
+            case "yellowfish":
+                return yellowFishSprite;
+            case "bluefish":
+                return blueFishSprite;
+            default:
+                Debug.LogWarning($"[TaskDisplayUI] 未知的魚顏色 key: {colorKey}");
+                return null;
+        }
     }
 }

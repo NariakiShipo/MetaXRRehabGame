@@ -19,6 +19,9 @@ public class GameModeManager : MonoBehaviour
     [Tooltip("時間選擇按鈕的父物體（難度選擇後顯示）")]
     [SerializeField] private GameObject[] timeSelectionUI;
     
+    [Tooltip("遊戲進行中的 UI（遊戲開始前隱藏，開始後顯示）")]
+    [SerializeField] private GameObject[] gameplayUI;
+    
     [Header("Events")]
     [Tooltip("遊戲開始時觸發")]
     public UnityEvent onGameStart;
@@ -73,8 +76,9 @@ public class GameModeManager : MonoBehaviour
             Debug.Log("[GameModeManager] 已訂閱 MultiBucketManager.OnAllStagesCompleted 事件");
         }
         
-        // 初始化時隱藏時間選擇UI
+        // 初始化時隱藏時間選擇UI和遊戲UI
         HideTimeSelectionUI();
+        HideGameplayUI();
         
         Debug.Log("[GameModeManager] 等待玩家選擇難度...");
     }
@@ -241,6 +245,9 @@ public class GameModeManager : MonoBehaviour
         // 隱藏時間選擇UI
         HideTimeSelectionUI();
         
+        // 顯示遊戲UI
+        ShowGameplayUI();
+        
         // 開始遊戲
         StartGameWithDifficulty(selectedDifficultyIndex, selectedDifficulty, selectedTimeLimit);
     }
@@ -280,6 +287,42 @@ public class GameModeManager : MonoBehaviour
         {
             foreach (var ui in timeSelectionUI)
                 ui.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// 顯示遊戲UI
+    /// </summary>
+    private void ShowGameplayUI()
+    {
+        if (gameplayUI != null)
+        {
+            foreach (var ui in gameplayUI)
+            {
+                if (ui != null)
+                {
+                    ui.SetActive(true);
+                }
+            }
+            Debug.Log("[GameModeManager] 已顯示遊戲 UI");
+        }
+    }
+    
+    /// <summary>
+    /// 隱藏遊戲UI
+    /// </summary>
+    private void HideGameplayUI()
+    {
+        if (gameplayUI != null)
+        {
+            foreach (var ui in gameplayUI)
+            {
+                if (ui != null)
+                {
+                    ui.SetActive(false);
+                }
+            }
+            Debug.Log("[GameModeManager] 已隱藏遊戲 UI");
         }
     }
     
@@ -357,13 +400,14 @@ public class GameModeManager : MonoBehaviour
         selectedDifficultyIndex = -1;
         selectedTimeLimit = 0f;
         
-        // 重新顯示難度選擇 UI，隱藏時間選擇UI
+        // 重新顯示難度選擇 UI，隱藏時間選擇UI和遊戲UI
         if (difficultySelectionUI != null)
         {
             foreach (var ui in difficultySelectionUI)
                 ui.SetActive(true);
         }
         HideTimeSelectionUI();
+        HideGameplayUI();
         
         // 暫停遊戲系統
         InitializeGameSystems(false);
