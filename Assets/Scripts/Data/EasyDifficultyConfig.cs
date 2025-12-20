@@ -40,12 +40,7 @@ public class EasyDifficultyConfig : DifficultyConfig
             return new string[] { "redFish" };
         }
         
-        // 如果不使用單一顏色，則啟用所有顏色
-        return new string[] 
-        {
-            "redFish",
-            "grayFish",
-            "greenFish"
-        };
+        // 如果不使用單一顏色，則啟用所有顏色（使用 FishTags 保持同步）
+        return FishTags.GetAllFishTags();
     }
 }

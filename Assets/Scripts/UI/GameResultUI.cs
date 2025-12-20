@@ -344,9 +344,8 @@ public class GameResultUI : MonoBehaviour
         // 2. 自動隱藏所有魚
         if (autoHideAllFish)
         {
-            // 使用 Tag 尋找所有魚（使用 try-catch 避免 Tag 不存在的錯誤）
-            string[] fishTags = { "redFish", "grayFish", "greenFish", "yellowFish" };
-            foreach (string fishTag in fishTags)
+            // 使用統一的 FishTags 配置（更易擴展）
+            foreach (string fishTag in FishTags.GetAllFishTags())
             {
                 try
                 {

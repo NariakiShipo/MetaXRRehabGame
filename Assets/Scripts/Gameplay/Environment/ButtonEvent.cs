@@ -117,18 +117,6 @@ public class ButtonEvent : MonoBehaviour
     [Tooltip("按鈕被釋放時觸發")]
     public UnityEvent onButtonReleased;
     
-    // void OnEnable()
-    // {
-    //     if (grabAction.action != null)
-    //         grabAction.action.Enable();
-    // }
-    
-    // void OnDisable()
-    // {
-    //     if (grabAction.action != null)
-    //         grabAction.action.Disable();
-    // }
-    
     void Start()
     {
         Debug.Log($"[ButtonEvent] {gameObject.name} 已初始化，觸發標籤：{triggerTag}");
@@ -191,27 +179,6 @@ public class ButtonEvent : MonoBehaviour
             transform.localPosition = Vector3.Lerp(transform.localPosition, targetPosition, Time.deltaTime * animationSpeed);
         }
         
-        // // InputAction 抓取邏輯（模仿 ScoopFish）
-        // if (grabAction.action != null)
-        // {
-        //     float grabValue = grabAction.action.ReadValue<float>();
-            
-        //     // 當手懸停在按鈕上且抓取值 > 0.8 時，觸發按下
-        //     if (isHoveredByHand && grabValue > 0.8f && !isPressed)
-        //     {
-        //         // 檢查冷卻時間
-        //         if (Time.time - lastPressTime >= cooldownTime)
-        //         {
-        //             HandleButtonPress();
-        //         }
-        //     }
-            
-        //     // 當抓取值 < 0.2 時，觸發釋放
-        //     if (isPressed && grabValue < 0.2f)
-        //     {
-        //         HandleButtonRelease();
-        //     }
-        // }
     }
     
     /// <summary>
@@ -278,16 +245,6 @@ public class ButtonEvent : MonoBehaviour
         
         Debug.Log($"[ButtonEvent] Meta XR Grabbable - isPressed 設為 true（觸發按下事件）");
         
-        // 觸覺反饋
-        if (enableHaptics && hapticPlayer != null)
-        {
-            hapticPlayer.Play(Controller.Right);
-            Debug.Log($"[ButtonEvent] 播放觸覺反饋");
-        }
-        
-        // 播放按下音效
-        PlayButtonPressSound();
-        
         // 觸發按下事件
         onButtonPressed?.Invoke();
         lastPressTime = Time.time;
@@ -305,15 +262,14 @@ public class ButtonEvent : MonoBehaviour
         
         Debug.Log($"[ButtonEvent] Meta XR Grabbable - isPressed 設為 false（觸發釋放事件）");
         
-        // 播放釋放音效
-        PlayButtonReleaseSound();
-        
         // 觸發釋放事件
         onButtonReleased?.Invoke();
     }
     
     void OnTriggerEnter(Collider other)
     {
+        hapticPlay();
+        PlayButtonPressSound();
         // 只在 Trigger 或 Both 模式下處理
         if (detectionMode == DetectionMode.Collision)
             return;
@@ -323,6 +279,7 @@ public class ButtonEvent : MonoBehaviour
     
     void OnTriggerExit(Collider other)
     {
+        PlayButtonReleaseSound();
         // 只在 Trigger 或 Both 模式下處理
         if (detectionMode == DetectionMode.Collision)
             return;
@@ -332,6 +289,8 @@ public class ButtonEvent : MonoBehaviour
     
     void OnCollisionEnter(Collision collision)
     {
+        hapticPlay();
+        PlayButtonPressSound();
         // 只在 Collision 或 Both 模式下處理
         if (detectionMode == DetectionMode.Trigger)
             return;
@@ -341,6 +300,7 @@ public class ButtonEvent : MonoBehaviour
     
     void OnCollisionExit(Collision collision)
     {
+        PlayButtonReleaseSound();
         // 只在 Collision 或 Both 模式下處理
         if (detectionMode == DetectionMode.Trigger)
             return;
@@ -544,4 +504,13 @@ public class ButtonEvent : MonoBehaviour
             audioSource.PlayOneShot(buttonReleaseSound, soundVolume);
         }
     }
+
+    void hapticPlay(){
+      // 觸覺反饋
+        if (enableHaptics && hapticPlayer != null)
+        {
+            hapticPlayer.Play(Controller.Right);
+            Debug.Log($"[ButtonEvent] 播放觸覺反饋");
+        }
+   }
 }

@@ -8,7 +8,7 @@ using UnityEngine.Events;
 public class TaskManager : MonoBehaviour
 {
     [Header("颜色配置")]
-    [SerializeField] private string[] availableColors = { "redFish", "grayFish", "yellowFish", "greenFish" };
+    [SerializeField] private string[] availableColors => FishTags.GetAllFishTags();
     
     [Header("颜色显示名称映射")]
     [SerializeField] private ColorNameMapping[] colorNameMappings;

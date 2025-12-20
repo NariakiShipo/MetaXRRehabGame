@@ -74,8 +74,8 @@ public class ScoopFish : MonoBehaviour
     {
         Debug.Log($"[ScoopFish] OnCollisionEnter: {collision.gameObject.name}");
         
-        // 檢測魚
-        if (collision.gameObject.CompareTag("redFish") || collision.gameObject.CompareTag("grayFish") || collision.gameObject.CompareTag("greenFish"))
+        // 檢測魚（使用統一的 FishTags 配置）
+        if (FishTags.IsFish(collision.gameObject))
         {
             hoveredFish = collision.gameObject.GetComponent<FishForwardMovement>();
         }
@@ -93,8 +93,8 @@ public class ScoopFish : MonoBehaviour
     {
         Debug.Log($"[ScoopFish] OnTriggerEnter: {other.gameObject.name}");
         
-        // 檢測魚
-        if (other.gameObject.CompareTag("redFish") || other.gameObject.CompareTag("grayFish") || other.gameObject.CompareTag("greenFish"))
+        // 檢測魚（使用統一的 FishTags 配置）
+        if (FishTags.IsFish(other.gameObject))
         {
             hoveredFish = other.gameObject.GetComponent<FishForwardMovement>();
         }

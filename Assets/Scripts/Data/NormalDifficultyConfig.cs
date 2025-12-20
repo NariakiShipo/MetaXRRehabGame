@@ -34,15 +34,8 @@ public class NormalDifficultyConfig : DifficultyConfig
     /// </summary>
     protected override string[] GetEnabledColors()
     {
-        // 普通模式根據colorCount參數決定顏色數量
-        // 使用 Tag 格式以便與 FishSpawnManager 相容
-        string[] allColors = new string[] 
-        {
-            "redFish",
-            "grayFish",
-            "greenFish",
-            "yellowFish"
-        };
+        // 普通模式使用 FishTags 的所有可用顏色
+        string[] allColors = FishTags.GetAllFishTags();
 
         // 限制在指定數量內
         int count = Mathf.Min(colorCount, allColors.Length);

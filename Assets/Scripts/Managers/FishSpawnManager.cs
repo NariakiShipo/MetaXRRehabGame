@@ -38,7 +38,8 @@ public class FishSpawnManager : MonoBehaviour
     [SerializeField] private int minFishPerColor = 5;
     
     private List<Fish> fish = new List<Fish>();
-    private string[] fishname = {"redFish", "grayFish", "greenFish"};
+    // 動態獲取所有可用的魚類標籤（確保與其他系統同步）
+    private string[] fishname => FishTags.GetAllFishTags();
     private List<Vector3> spawnedPositions = new List<Vector3>();
     private bool isDataInitialized = false; // 標記 Fish 資料是否已初始化
     
@@ -108,13 +109,16 @@ public class FishSpawnManager : MonoBehaviour
             allowReuseSpawnPoints = true;
         }
         
-        // 為每種魚預先創建資料物件（只生成启用的颜色）
-        for (int i = 0; i < fishname.Length && i < fishPrefab.Length; i++)
+        // 為每種啟用的魚預先創建資料物件（只遍歷啟用的顏色）
+        for (int i = 0; i < enabledColors.Count && i < fishPrefab.Length; i++)
         {
-            // 检查该颜色是否启用
-            if (!enabledColors.Contains(fishname[i]))
+            string fishColor = enabledColors[i];
+            
+            // 檢查該顏色是否有對應的預製體
+            int prefabIndex = System.Array.IndexOf(fishname, fishColor);
+            if (prefabIndex < 0 || prefabIndex >= fishPrefab.Length)
             {
-                Debug.Log($"[FishSpawnManager] {fishname[i]} 未啟用，跳過生成");
+                Debug.LogWarning($"[FishSpawnManager] {fishColor} 沒有對應的預製體，跳過生成");
                 continue;
             }
             
@@ -132,12 +136,12 @@ public class FishSpawnManager : MonoBehaviour
                 spawnCount = pointsPerFishType;
             }
             
-            // 任务系统需要：确保每种颜色至少生成足够的鱼来完成任务
+            // 任務系統需要：確保每種顏色至少生成足夠的魚來完成任務
             spawnCount = Mathf.Max(spawnCount, minFishPerColor);
             
-            fish.Add(new Fish(fishname[i], spawnCount, i + 1));
+            fish.Add(new Fish(fishColor, spawnCount, prefabIndex + 1));
             
-            Debug.Log($"[FishSpawnManager] 初始化 Fish 資料: {fishname[i]} - 預計生成 {spawnCount} 隻");
+            Debug.Log($"[FishSpawnManager] 初始化 Fish 資料: {fishColor} - 預計生成 {spawnCount} 隻");
         }
         
         isDataInitialized = true;

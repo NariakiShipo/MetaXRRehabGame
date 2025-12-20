@@ -56,11 +56,14 @@ public class BucketEvent : MonoBehaviour
 
     private void Awake()
     {
-        // initialize dictionary (not relying on Generator)
-        fishInBucket["redFish"] = 0;
-        fishInBucket["blueFish"] = 0;
-        fishInBucket["greenFish"] = 0;
-        fishInBucket["grayFish"] = 0;
+        // 使用 FishTags 動態初始化字典（確保與 FishTags.cs 同步）
+        foreach (string fishTag in FishTags.GetAllFishTags())
+        {
+            if (!fishInBucket.ContainsKey(fishTag))
+            {
+                fishInBucket[fishTag] = 0;
+            }
+        }
     }
 
     private void Start()
@@ -266,9 +269,11 @@ public class BucketEvent : MonoBehaviour
     /// </summary>
     private string GetFishTag(GameObject obj)
     {
-        if (obj.CompareTag("redFish")) return "redFish";
-        if (obj.CompareTag("grayFish")) return "grayFish";
-        if (obj.CompareTag("greenFish")) return "greenFish";
+        // 使用 FishTags 來檢查所有可用的魚類（更易維護和擴展）
+        if (FishTags.IsFish(obj))
+        {
+            return obj.tag;
+        }
         return null;
     }
 

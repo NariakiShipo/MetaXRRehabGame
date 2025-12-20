@@ -38,6 +38,7 @@ TagManager:
   - Scooper
   - grayFish
   - 'yellowFish '
+  - blueFish
   layers:
   - Default
   - TransparentFX

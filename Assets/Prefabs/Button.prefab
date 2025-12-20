@@ -71,7 +71,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0c92b3480cca0da4e89f8e12ee5e45f3, type: 2}
+  - {fileID: 2100000, guid: 240ca68a39e42c24ab28de5491a775e8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -133,11 +133,23 @@ MonoBehaviour:
   cooldownTime: 2
   grabbable: {fileID: 1736030018185073545}
   autoGetGrabbable: 1
+  grabAction:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Grab
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 2656b715-b77e-40a6-915c-5e042c6e5df3
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
   enableVisualEffects: 1
   glowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   glowIntensity: 2
   selectedMaterial: {fileID: 2100000, guid: a627342aab6929d4293e6bb3913c959f, type: 2}
-  normalMaterial: {fileID: 2100000, guid: 0c92b3480cca0da4e89f8e12ee5e45f3, type: 2}
+  normalMaterial: {fileID: 2100000, guid: 240ca68a39e42c24ab28de5491a775e8, type: 2}
   isSelected: 0
   enableHoverAnimation: 1
   hoverScale: {x: 1.1, y: 1.1, z: 1.1}

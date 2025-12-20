@@ -225,6 +225,7 @@ public class DifficultyManager : MonoBehaviour
             if (taskType == TaskType.MultiStage)
             {
                 // 困難模式會在 HardModeManager.SetupMultiBuckets() 中啟用多水桶
+                MultiBucketManager.Instance.ActivateHardMode();
                 Debug.Log("[DifficultyManager] 困難模式 - 水桶將由 HardModeManager 設置");
             }
             else
