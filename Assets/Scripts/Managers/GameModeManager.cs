@@ -21,7 +21,9 @@ public class GameModeManager : MonoBehaviour
     
     [Tooltip("遊戲進行中的 UI（遊戲開始前隱藏，開始後顯示）")]
     [SerializeField] private GameObject[] gameplayUI;
-    
+
+    [Tooltip("輸入玩家ID用的UI（遊戲開始前隱藏，開始後顯示）")]
+    [SerializeField]private GameObject playerIDUI;
     [Header("Events")]
     [Tooltip("遊戲開始時觸發")]
     public UnityEvent onGameStart;
@@ -244,7 +246,7 @@ public class GameModeManager : MonoBehaviour
         
         // 隱藏時間選擇UI
         HideTimeSelectionUI();
-        
+        HidePlayerIDUI();
         // 顯示遊戲UI
         ShowGameplayUI();
         
@@ -289,7 +291,14 @@ public class GameModeManager : MonoBehaviour
                 ui.SetActive(false);
         }
     }
-    
+
+    private void HidePlayerIDUI()
+    {
+        if (playerIDUI != null)
+        {
+            playerIDUI.SetActive(false);
+        }
+    }
     /// <summary>
     /// 顯示遊戲UI
     /// </summary>
@@ -342,6 +351,14 @@ public class GameModeManager : MonoBehaviour
         isGameStarted = true;
         
         Debug.Log($"[GameModeManager] 選擇難度：{difficultyName}，時間限制：{timeLimit} 秒");
+        
+        // 設定 CSVLogger 的遊戲模式和場景
+        if (CSVLogger.Instance != null)
+        {
+            CSVLogger.Instance.SceneName = "GameScene";
+            CSVLogger.Instance.GameMode = difficultyName;
+            Debug.Log($"[GameModeManager] 已設定 CSVLogger 遊戲模式：{difficultyName}");
+        }
         
         // 設置 GameManager 的倒數計時
         if (gameManager != null)
@@ -667,10 +684,17 @@ public class GameModeManager : MonoBehaviour
         switch (result)
         {
             case TaskValidationResult.Success:
-                // 任务完成，加分并生成新任务
+                // 任务完成，加分並記錄
                 if (scoreManager != null)
                 {
                     scoreManager.AddTaskScore();
+                    
+                    // 記錄分數到 CSVLogger
+                    if (CSVLogger.Instance != null)
+                    {
+                        CSVLogger.Instance.Score = scoreManager.GetCurrentScore().ToString();
+                        Debug.Log($"[GameModeManager] 已更新 CSVLogger 分數：{CSVLogger.Instance.Score}");
+                    }
                 }
                 GenerateNewTask();
                 break;
@@ -721,6 +745,24 @@ public class GameModeManager : MonoBehaviour
         {
             scoreManager.AddTaskScore();
             Debug.Log("[GameModeManager] ✅ 已添加任務分數");
+            
+            // 記錄分數和完成情況到 CSVLogger
+            if (CSVLogger.Instance != null)
+            {
+                CSVLogger.Instance.Score = scoreManager.GetCurrentScore().ToString();
+                
+                // 困難模式：所有階段完成
+                if (hardModeManager != null && hardModeManager.HasActiveTask)
+                {
+                    HardModeTask task = hardModeManager.GetCurrentTask();
+                    if (task != null)
+                    {
+                        int totalStages = task.TotalStages;
+                        CSVLogger.Instance.TaskCompletion = $"{totalStages}, {totalStages}";
+                        Debug.Log($"[GameModeManager] 已更新 CSVLogger - 分數：{CSVLogger.Instance.Score}，完成：{CSVLogger.Instance.TaskCompletion}");
+                    }
+                }
+            }
         }
         
         // 刷新任務：清空所有水桶 + 重新生成魚 + 生成新任務

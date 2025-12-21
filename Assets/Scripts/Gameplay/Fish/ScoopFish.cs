@@ -8,7 +8,9 @@ public class ScoopFish : MonoBehaviour
 
     private FishForwardMovement hoveredFish; // Lantern near pole
     private FishForwardMovement heldFish;    // Lantern currently held
-    
+    [SerializeField]private GrabPoleKeyboardTrigger keyboardpanel;
+
+
     private ButtonEvent hoveredButton; // 懸停的按鈕
     private ButtonEvent pressedButton; // 正在按下的按鈕
 
@@ -38,7 +40,7 @@ public class ScoopFish : MonoBehaviour
         }
 
         // Snap any hovered lantern on grab, no basket check
-        if (hoveredFish != null && grabValue > 0.8f && heldFish == null && snappedFish == null)
+        if (hoveredFish != null && grabValue > 0.6f && heldFish == null && snappedFish == null)
         {
             heldFish = hoveredFish;
             SnapFish(heldFish);
@@ -53,7 +55,7 @@ public class ScoopFish : MonoBehaviour
         
         // 按鈕互動邏輯
         // 當懸停在按鈕上且抓取值 > 0.8 時，按下按鈕
-        if (hoveredButton != null && grabValue > 0.8f && pressedButton == null)
+        if (hoveredButton != null && grabValue > 0.6f && pressedButton == null)
         {   
             Debug.Log($"[ScoopFish] 嘗試按下按鈕, grabValue={grabValue:F2}");
             pressedButton = hoveredButton;
@@ -66,6 +68,13 @@ public class ScoopFish : MonoBehaviour
             Debug.Log($"[ScoopFish] 嘗試釋放按鈕, grabValue={grabValue:F2}");
             ReleaseButton(pressedButton);
             pressedButton = null;
+        }
+
+        if (keyboardpanel != null && grabValue > 0.6f)
+        {
+            Debug.Log($"[ScoopFish] 嘗試打開keyboard, grabValue={grabValue:F2}");
+            keyboardpanel.OnTriggerPressed();
+            keyboardpanel = null; // optional: prevent multiple calls per press
         }
 
     }
@@ -106,6 +115,13 @@ public class ScoopFish : MonoBehaviour
             hoveredButton = button;
             Debug.Log($"[ScoopFish] (觸發器)懸停在按鈕：{other.gameObject.name}");
         }
+
+        GrabPoleKeyboardTrigger keyboard = other.gameObject.GetComponent<GrabPoleKeyboardTrigger>();
+        if (keyboard == null && other.transform.parent != null)
+            keyboard = other.transform.parent.GetComponent<GrabPoleKeyboardTrigger>();
+
+        if (keyboard != null)
+            keyboardpanel= keyboard;    
     }
 
     void OnCollisionExit(Collision collision)
@@ -140,6 +156,13 @@ public class ScoopFish : MonoBehaviour
             hoveredButton = null;
             Debug.Log($"[ScoopFish] (觸發器)離開按鈕：{other.gameObject.name}");
         }
+
+        GrabPoleKeyboardTrigger keyboard = other.gameObject.GetComponent<GrabPoleKeyboardTrigger>();
+        if (keyboard == null && other.transform.parent != null)
+            keyboard = other.transform.parent.GetComponent<GrabPoleKeyboardTrigger>();
+
+        if (keyboard == keyboardpanel)
+            keyboardpanel= null; 
     }
 
     private void SnapFish(FishForwardMovement fish)
@@ -182,8 +205,9 @@ public class ScoopFish : MonoBehaviour
         
         // 調用按鈕的公開方法來觸發按下事件
         button.PressButton();
-        
+
         Debug.Log($"[ScoopFish] 按下按鈕：{button.gameObject.name}");
+        
     }
     
     /// <summary>

@@ -42,6 +42,12 @@ public class GameManager : MonoBehaviour
             isEnd = true;
             Debug.LogWarning("Time's up!");
 
+            // 記錄遊戲時間用完
+            if (CSVLogger.Instance != null)
+            {
+                CSVLogger.Instance.OnGameTimeExpired();
+            }
+
             // 觸發遊戲結束並計算分數
             if (scoreManager != null)
             {

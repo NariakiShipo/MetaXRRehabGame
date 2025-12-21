@@ -37,7 +37,6 @@ public class HardModeManager : MonoBehaviour
     // 當前任務
     private HardModeTask currentTask;
     private int taskIdCounter = 0;
-    private int currentStageIndex = 0;                                   // 當前階段索引
     
     // 追蹤水桶中魚的進入順序
     private List<FishColor> fishEntrySequence = new List<FishColor>();
@@ -456,6 +455,15 @@ public class HardModeManager : MonoBehaviour
             {
                 Debug.Log($"[HardModeManager] 進入下一階段: {currentTask.GetCurrentStageDisplayText()}");
                 
+                // 記錄到 CSVLogger - 困難模式格式：已完成, 總數
+                if (CSVLogger.Instance != null)
+                {
+                    int completedStages = currentTask.currentStageIndex;
+                    int totalStages = currentTask.TotalStages;
+                    CSVLogger.Instance.TaskCompletion = $"{completedStages}, {totalStages}";
+                    Debug.Log($"[HardModeManager] 已更新 CSVLogger 任務完成情況：{CSVLogger.Instance.TaskCompletion}");
+                }
+                
                 // 通知 UI 階段進度更新
                 NotifyStageProgress();
                 
@@ -465,6 +473,16 @@ public class HardModeManager : MonoBehaviour
             {
                 // 任務完全完成
                 OnTaskCompleted?.Invoke();
+                
+                // 記錄到 CSVLogger - 所有階段完成
+                if (CSVLogger.Instance != null)
+                {
+                    int totalStages = currentTask.TotalStages;
+                    CSVLogger.Instance.TaskCompletion = $"{totalStages}, {totalStages}";
+                    CSVLogger.Instance.AnswerSituation = "任務全部完成";
+                    Debug.Log($"[HardModeManager] 已更新 CSVLogger 任務完成情況：{CSVLogger.Instance.TaskCompletion}");
+                }
+                
                 return HardModeValidationResult.Success;
             }
         }
