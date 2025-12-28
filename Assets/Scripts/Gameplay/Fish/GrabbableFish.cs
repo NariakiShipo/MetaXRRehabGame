@@ -50,8 +50,9 @@ public class GrabbableFish : MonoBehaviour
             fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
         }
         
-        // 獲取 BucketEvent 引用（用於困難模式檢查）
-        bucketEvent = FindFirstObjectByType<BucketEvent>();
+        // 【修正】不使用 FindFirstObjectByType，避免找到 normalBucket
+        // bucketEvent 應該在困難模式下透過 IsLockedInAnyBucket() 動態尋找
+        bucketEvent = null;
     }
 
     /// <summary>
@@ -66,8 +67,11 @@ public class GrabbableFish : MonoBehaviour
             Debug.LogWarning($"[GrabbableFish] {fishColor} 已在困難模式下鎖定，無法抓取！");
             isLockedInBucket = true;
             
-            // 強制將魚放回桶內
+            // 【修正】只有當 bucketEvent 不是 normalBucket 時才放回
             ForceFishBackToBucket();
+            
+            // 重置 bucketEvent，避免下次被誤用
+            bucketEvent = null;
             
             // 這裡可以添加視覺/聽覺反饋
             // 例如播放"嗡"的錯誤音效、魚閃爍紅色等
@@ -114,22 +118,28 @@ public class GrabbableFish : MonoBehaviour
             }
         }
         
-        // 備用：檢查預設的 bucketEvent
-        if (bucketEvent != null && bucketEvent.IsFishLocked(gameObject))
-        {
-            return true;
-        }
+        // // 備用：檢查預設的 bucketEvent（但排除 normalBucket）
+        // BucketEvent normalModeBucket = MultiBucketManager.Instance?.GetNormalModeBucketEvent();
         
-        // 更完整的檢查：找到所有 BucketEvent 並檢查
-        BucketEvent[] allBuckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
-        foreach (var bucket in allBuckets)
-        {
-            if (bucket.IsFishLocked(gameObject))
-            {
-                bucketEvent = bucket; // 記錄是哪個桶
-                return true;
-            }
-        }
+        // if (bucketEvent != null && bucketEvent.IsFishLocked(gameObject) && bucketEvent != normalModeBucket)
+        // {
+        //     return true;
+        // }
+        
+        // // 【修改】更完整的檢查：找到所有 BucketEvent 並檢查，但排除 normalBucket
+        // BucketEvent[] allBuckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
+        // foreach (var bucket in allBuckets)
+        // {
+        //     // 【重要】跳過 normalBucket，避免在困難模式下意外觸發
+        //     if (bucket == normalModeBucket)
+        //         continue;
+                
+        //     if (bucket.IsFishLocked(gameObject))
+        //     {
+        //         bucketEvent = bucket; // 記錄是哪個桶
+        //         return true;
+        //     }
+        // }
         
         return false;
     }
@@ -141,6 +151,14 @@ public class GrabbableFish : MonoBehaviour
     {
         if (bucketEvent != null)
         {
+            // 【修正】確認 bucketEvent 不是 normalBucket 才執行
+            BucketEvent normalModeBucket = MultiBucketManager.Instance?.GetNormalModeBucketEvent();
+            if (bucketEvent == normalModeBucket)
+            {
+                Debug.LogWarning($"[GrabbableFish] 警告：bucketEvent 指向 normalBucket，不應該在困難模式下執行！");
+                return;
+            }
+            
             // 將魚傳送回桶內中心
             transform.position = bucketEvent.transform.position;
             
@@ -229,7 +247,26 @@ public class GrabbableFish : MonoBehaviour
     /// <summary>
     /// 檢查魚是否在困難模式下被鎖定
     /// </summary>
-    public bool IsLockedInBucket => isLockedInBucket || (bucketEvent != null && bucketEvent.IsFishLocked(gameObject));
+    public bool IsLockedInBucket
+    {
+        get
+        {
+            if (isLockedInBucket)
+                return true;
+            
+            // 【修正】確認 bucketEvent 不是 normalBucket 才檢查
+            if (bucketEvent != null)
+            {
+                BucketEvent normalModeBucket = MultiBucketManager.Instance?.GetNormalModeBucketEvent();
+                if (bucketEvent != normalModeBucket && bucketEvent.IsFishLocked(gameObject))
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+    }
 
     /// <summary>
     /// 設置是否在放開時銷毀魚

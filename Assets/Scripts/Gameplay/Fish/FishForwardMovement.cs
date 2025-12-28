@@ -199,6 +199,20 @@ public class FishForwardMovement : MonoBehaviour
     /// </summary>
     private void UpdateBucketReturnPoint(GameObject bucket)
     {
+        // 【修正】排除 normalBucket，防止困難模式下被誤設定
+        if (bucket == null)
+            return;
+        
+        BucketEvent bucketEventComponent = bucket.GetComponent<BucketEvent>();
+        BucketEvent normalModeBucket = MultiBucketManager.Instance?.GetNormalModeBucketEvent();
+        
+        // 如果這個桶是 normalBucket，在困難模式下應該被排除
+        if (normalModeBucket != null && bucketEventComponent == normalModeBucket)
+        {
+            Debug.LogWarning($"[FishForwardMovement] 檢測到 normalBucket，在困難模式下應被排除，不更新返回點");
+            return;
+        }
+        
         // 優先從 BucketEvent 取得設定的返回點
         BucketEvent bucketEvent = bucket.GetComponent<BucketEvent>();
         if (bucketEvent == null)
@@ -227,7 +241,7 @@ public class FishForwardMovement : MonoBehaviour
             return;
         }
         
-        // 最後備用：使用桶子本身的位置
+        // 最後備用：使用桶子本身作為返回點
         bucketReturnPoint = bucket;
         Debug.Log($"[FishForwardMovement] 使用桶子本身作為返回點: {bucket.name}");
     }

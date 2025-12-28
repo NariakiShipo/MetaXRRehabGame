@@ -268,11 +268,16 @@ public class ButtonEvent : MonoBehaviour
     
     void OnTriggerEnter(Collider other)
     {
-        hapticPlay();
-        PlayButtonPressSound();
         // 只在 Trigger 或 Both 模式下處理
         if (detectionMode == DetectionMode.Collision)
             return;
+        
+        // 只有當 tag 正確時才播放音效和觸覺反饋
+        if (other.CompareTag(triggerTag))
+        {
+            hapticPlay();
+            PlayButtonPressSound();
+        }
             
         HandleEnter(other.CompareTag(triggerTag));
     }
@@ -289,11 +294,16 @@ public class ButtonEvent : MonoBehaviour
     
     void OnCollisionEnter(Collision collision)
     {
-        hapticPlay();
-        PlayButtonPressSound();
         // 只在 Collision 或 Both 模式下處理
         if (detectionMode == DetectionMode.Trigger)
             return;
+        
+        // 只有當 tag 正確時才播放音效和觸覺反饋
+        if (collision.gameObject.CompareTag(triggerTag))
+        {
+            hapticPlay();
+            PlayButtonPressSound();
+        }
             
         HandleEnter(collision.gameObject.CompareTag(triggerTag));
     }

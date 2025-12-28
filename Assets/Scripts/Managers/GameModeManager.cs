@@ -542,7 +542,19 @@ public class GameModeManager : MonoBehaviour
         // 如果有 MultiBucketManager，根據當前模式清空正確的水桶
         if (MultiBucketManager.Instance != null)
         {
-            if (!MultiBucketManager.Instance.IsHardMode)
+            // 直接從 DifficultyManager 獲取當前任務類型，而非依賴 IsHardMode flag
+            TaskType taskType = difficultyManager != null ? difficultyManager.GetCurrentTaskType() : TaskType.CountOnly;
+            
+            Debug.Log($"[GameModeManager] 🪣 清空水桶 - TaskType: {taskType}, IsHardMode: {MultiBucketManager.Instance.IsHardMode}");
+            
+            if (taskType == TaskType.MultiStage)
+            {
+                // 困難模式：由 MultiBucketManager 清空所有水桶
+                MultiBucketManager.Instance.ClearAllBuckets();
+                Debug.Log("[GameModeManager] 已清空所有困難模式水桶");
+                return;
+            }
+            else
             {
                 // 普通模式：清空普通水桶
                 BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
@@ -552,13 +564,6 @@ public class GameModeManager : MonoBehaviour
                     Debug.Log($"[GameModeManager] 已清空普通模式水桶: {normalBucket.gameObject.name}");
                     return;
                 }
-            }
-            else
-            {
-                // 困難模式：由 MultiBucketManager 清空所有水桶
-                MultiBucketManager.Instance.ClearAllBuckets();
-                Debug.Log("[GameModeManager] 已清空所有困難模式水桶");
-                return;
             }
         }
         

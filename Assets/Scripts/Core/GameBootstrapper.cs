@@ -15,7 +15,7 @@ public class GameBootstrapper : MonoBehaviour
     [SerializeField] private GameModeManager gameModeManager;
     [SerializeField] private DifficultyManager difficultyManager;
     [SerializeField] private FishSpawnManager fishSpawnManager;
-    [SerializeField] private BucketEvent bucketEvent;
+    [SerializeField] private MultiBucketManager multiBucketManager;  // ✅ 新增：統一管理所有水桶
     
     [Header("UI References")]
     [SerializeField] private TaskDisplayUI taskDisplayUI;
@@ -33,7 +33,7 @@ public class GameBootstrapper : MonoBehaviour
         if (gameModeManager == null) gameModeManager = FindFirstObjectByType<GameModeManager>();
         if (difficultyManager == null) difficultyManager = FindFirstObjectByType<DifficultyManager>();
         if (fishSpawnManager == null) fishSpawnManager = FindFirstObjectByType<FishSpawnManager>();
-        if (bucketEvent == null) bucketEvent = FindFirstObjectByType<BucketEvent>();
+        if (multiBucketManager == null) multiBucketManager = FindFirstObjectByType<MultiBucketManager>();  // ✅ 新增
         
         // UI and Handlers
         if (taskDisplayUI == null) taskDisplayUI = FindFirstObjectByType<TaskDisplayUI>();
@@ -54,14 +54,14 @@ public class GameBootstrapper : MonoBehaviour
         if (gameModeManager != null) locator.Register(gameModeManager);
         if (difficultyManager != null) locator.Register(difficultyManager);
         if (fishSpawnManager != null) locator.Register(fishSpawnManager);
-        if (bucketEvent != null) locator.Register(bucketEvent);
+        if (multiBucketManager != null) locator.Register(multiBucketManager);  // ✅ 新增
         
         // UI and Handlers
         if (taskDisplayUI != null) locator.Register(taskDisplayUI);
         if (confirmButtonHandler != null) locator.Register(confirmButtonHandler);
         if (retryButtonHandler != null) locator.Register(retryButtonHandler);
 
-        Debug.Log("[GameBootstrapper] all services have been registered.");
+        Debug.Log("[GameBootstrapper] ✅ 所有服務已註冊");
     }
 
     // Clear services when uninstalling a scenario

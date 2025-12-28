@@ -371,23 +371,27 @@ public class GameResultUI : MonoBehaviour
         // 3. 隱藏水桶
         if (hideBuckets)
         {
-            // 尋找所有 BucketEvent 組件的物件
-            BucketEvent[] buckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
-            foreach (BucketEvent bucket in buckets)
-            {
-                if (bucket != null && bucket.gameObject.activeSelf)
-                {
-                    bucket.gameObject.SetActive(false);
-                    hiddenCount++;
-                    Debug.Log($"[GameResultUI] 隱藏水桶: {bucket.gameObject.name}");
-                }
-            }
-            
-            // 也隱藏 MultiBucketManager 管理的水桶
+            // 【修正】不使用 FindObjectsByType 避免誤觸發 normalBucket
+            // 而是透過 MultiBucketManager 統一管理隱藏
             if (MultiBucketManager.Instance != null)
             {
                 MultiBucketManager.Instance.HideAllBuckets();
                 Debug.Log($"[GameResultUI] 隱藏 MultiBucketManager 的所有水桶");
+                hiddenCount++;
+            }
+            else
+            {
+                // 備用：如果沒有 MultiBucketManager，才使用 FindObjectsByType
+                BucketEvent[] buckets = FindObjectsByType<BucketEvent>(FindObjectsSortMode.None);
+                foreach (BucketEvent bucket in buckets)
+                {
+                    if (bucket != null && bucket.gameObject.activeSelf)
+                    {
+                        bucket.gameObject.SetActive(false);
+                        hiddenCount++;
+                        Debug.Log($"[GameResultUI] 隱藏水桶: {bucket.gameObject.name}");
+                    }
+                }
             }
         }
         

@@ -7,7 +7,6 @@ public class ConfirmButtonHandler : MonoBehaviour
 {
     [Header("引用")]
     [SerializeField] private TaskManager taskManager;
-    [SerializeField] private BucketEvent bucketEvent;  // 備用：直接指定的水桶
     [SerializeField] private GameModeManager gameModeManager;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip correctSound;
@@ -25,15 +24,6 @@ public class ConfirmButtonHandler : MonoBehaviour
             }
         }
         
-        // bucketEvent 會在 GetActiveBucketEvent() 中動態獲取，這裡只作為備用
-        if (bucketEvent == null)
-        {
-            if (!ServiceLocator.Instance.TryGet(out bucketEvent))
-            {
-                bucketEvent = FindFirstObjectByType<BucketEvent>();
-            }
-        }
-        
         if (gameModeManager == null)
         {
             if (!ServiceLocator.Instance.TryGet(out gameModeManager))
@@ -41,19 +31,22 @@ public class ConfirmButtonHandler : MonoBehaviour
                 gameModeManager = FindFirstObjectByType<GameModeManager>();
             }
         }
+        
+        // ✅ 移除了直接的 bucketEvent SerializeField 和初始化
+        // BucketEvent 現在由 GetActiveBucketEvent() 動態獲取
     }
     
     /// <summary>
-    /// 獲取當前應該使用的 BucketEvent（根據難度模式）
+    /// ✅ 獲取當前活躍的 BucketEvent（改為使用 MultiBucketManager）
     /// </summary>
     private BucketEvent GetActiveBucketEvent()
     {
-        // 如果有 MultiBucketManager，根據當前模式獲取正確的水桶
+        // 優先使用 MultiBucketManager
         if (MultiBucketManager.Instance != null)
         {
             if (!MultiBucketManager.Instance.IsHardMode)
             {
-                // 普通模式：使用普通水桶
+                // 普通模式：從 MultiBucketManager 獲取普通水桶
                 BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
                 if (normalBucket != null)
                 {
@@ -63,8 +56,8 @@ public class ConfirmButtonHandler : MonoBehaviour
             // 困難模式：使用 HardModeManager 的驗證邏輯，這裡不需要單獨的 BucketEvent
         }
         
-        // 備用：使用直接設置的 bucketEvent
-        return bucketEvent;
+        // 備用方案：直接查找（如果 MultiBucketManager 無法提供）
+        return FindFirstObjectByType<BucketEvent>();
     }
     
     /// <summary>

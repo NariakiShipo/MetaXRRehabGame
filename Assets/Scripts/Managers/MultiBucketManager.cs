@@ -98,8 +98,10 @@ public class MultiBucketManager : MonoBehaviour
         // 預設隱藏所有水桶
         HideAllBuckets();
         
-        // 預設啟用普通模式水桶
-        ActivateNormalMode();
+        // ❌ 移除自動啟用普通模式水桶
+        // 水桶的啟用應該由 DifficultyManager 統一控制
+        // 避免與 DifficultyManager 的初始化順序衝突
+        // ActivateNormalMode();
     }
     
     /// <summary>
@@ -171,6 +173,22 @@ public class MultiBucketManager : MonoBehaviour
         
         Debug.Log($"[MultiBucketManager] 初始化完成 - 困難模式水桶數量: {bucketPool.Count}, 有效 BucketEvent: {bucketEvents.FindAll(b => b != null).Count}");
         Debug.Log("===========================================");
+    }
+    
+    /// <summary>
+    /// ✅ 提供給外部的接口：獲取所有 BucketEvent（包含 null）
+    /// </summary>
+    public List<BucketEvent> GetAllBucketEvents()
+    {
+        return new List<BucketEvent>(bucketEvents);
+    }
+    
+    /// <summary>
+    /// ✅ 提供給外部的接口：檢查是否完全初始化
+    /// </summary>
+    public bool AreAllBucketsInitialized()
+    {
+        return bucketEvents.Count > 0 && bucketEvents.FindAll(b => b != null).Count > 0;
     }
     
     /// <summary>
@@ -356,31 +374,6 @@ public class MultiBucketManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 隱藏所有水桶
-    /// </summary>
-    private void HideAllBuckets_Old()
-    {
-        for (int i = 0; i < bucketPool.Count; i++)
-        {
-            if (bucketPool[i] != null)
-            {
-                bucketPool[i].SetActive(false);
-                
-                // 重置 BucketEvent 的多水桶管理狀態
-                if (i < bucketEvents.Count && bucketEvents[i] != null)
-                {
-                    bucketEvents[i].SetMultiBucketManaged(false);
-                    bucketEvents[i].SetHardMode(false);
-                }
-            }
-        }
-        activeBucketCount = 0;
-        currentStages.Clear();
-        bucketCompleted.Clear();
-        isHardMode = false;
-    }
-    
-    /// <summary>
     /// 啟用普通模式（簡單/普通難度）
     /// </summary>
     public void ActivateNormalMode()
@@ -389,14 +382,14 @@ public class MultiBucketManager : MonoBehaviour
         
         isHardMode = false;
         
-        // 隱藏所有困難模式水桶
-        foreach (var bucket in bucketPool)
-        {
-            if (bucket != null)
-            {
-                bucket.SetActive(false);
-            }
-        }
+        // // 隱藏所有困難模式水桶
+        // foreach (var bucket in bucketPool)
+        // {
+        //     if (bucket != null)
+        //     {
+        //         bucket.SetActive(false);
+        //     }
+        // }
         
         // 重置困難模式水桶的狀態
         for (int i = 0; i < bucketEvents.Count; i++)
@@ -412,6 +405,14 @@ public class MultiBucketManager : MonoBehaviour
         if (normalModeBucket != null)
         {
             normalModeBucket.SetActive(true);
+            
+            // 【修正】重新啟用 Collider
+            Collider normalBucketCollider = normalModeBucket.GetComponent<Collider>();
+            if (normalBucketCollider != null)
+            {
+                normalBucketCollider.enabled = true;
+                Debug.Log($"[MultiBucketManager] 已啟用普通模式水桶的 Collider");
+            }
             
             if (normalModeBucketEvent != null)
             {
@@ -441,18 +442,32 @@ public class MultiBucketManager : MonoBehaviour
         
         isHardMode = true;
         
-        // 隱藏普通模式水桶
-        if (normalModeBucket != null)
-        {
-            normalModeBucket.SetActive(false);
+        // // 隱藏普通模式水桶 - 確保徹底關閉
+        // if (normalModeBucket != null)
+        // {
+        //     normalModeBucket.SetActive(false);
             
-            if (normalModeBucketEvent != null)
-            {
-                normalModeBucketEvent.SetHardMode(false);
-            }
+        //     // 【修正】額外禁用 Collider，防止困難模式下的魚誤觸發
+        //     Collider normalBucketCollider = normalModeBucket.GetComponent<Collider>();
+        //     if (normalBucketCollider != null)
+        //     {
+        //         normalBucketCollider.enabled = false;
+        //         Debug.Log($"[MultiBucketManager] 已禁用普通模式水桶的 Collider");
+        //     }
             
-            Debug.Log($"[MultiBucketManager] 普通模式水桶 {normalModeBucket.name} 已隱藏");
-        }
+        //     if (normalModeBucketEvent != null)
+        //     {
+        //         normalModeBucketEvent.SetHardMode(false);
+        //         normalModeBucketEvent.SetMultiBucketManaged(false);
+        //         normalModeBucketEvent.ClearBucket();
+        //     }
+            
+        //     Debug.Log($"[MultiBucketManager] 普通模式水桶 {normalModeBucket.name} 已完全隱藏");
+        // }
+        // else
+        // {
+        //     Debug.LogWarning("[MultiBucketManager] ⚠️ 普通模式水桶未設置！");
+        // }
         
         // 困難模式水桶會在 SetupBucketsForStages 中啟用
     }
@@ -650,8 +665,8 @@ public class MultiBucketManager : MonoBehaviour
         {
             Debug.Log($"[MultiBucketManager] 🔄 重置水桶 {bucketIndex + 1}");
             
-            // 釋放水桶中的魚
-            bucketEvents[bucketIndex].RetryHardModeTask();
+            // 【修改】清空桶內全部的魚（而非只釋放錯誤顏色的魚）
+            bucketEvents[bucketIndex].ClearBucket();
             
             // 重置 BucketEvent 狀態
             bucketEvents[bucketIndex].ResetStatus();

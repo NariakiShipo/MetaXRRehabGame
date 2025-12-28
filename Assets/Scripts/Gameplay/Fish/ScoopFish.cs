@@ -82,87 +82,46 @@ public class ScoopFish : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         Debug.Log($"[ScoopFish] OnCollisionEnter: {collision.gameObject.name}");
-        
-        // 檢測魚（使用統一的 FishTags 配置）
-        if (FishTags.IsFish(collision.gameObject))
-        {
-            hoveredFish = collision.gameObject.GetComponent<FishForwardMovement>();
-        }
-        
-        // 檢測按鈕（根據 tag 判斷）
-        ButtonEvent button = collision.gameObject.GetComponent<ButtonEvent>();
-        if (button != null)
-        {
-            hoveredButton = button;
-            Debug.Log($"[ScoopFish] 懸停在按鈕：{collision.gameObject.name}");
-        }
+        HandleCollisionEnter(collision.gameObject);
     }
     
     void OnTriggerEnter(Collider other)
     {
         Debug.Log($"[ScoopFish] OnTriggerEnter: {other.gameObject.name}");
         
-        // 檢測魚（使用統一的 FishTags 配置）
-        if (FishTags.IsFish(other.gameObject))
+        // 【修正】在困難模式下排除 normalBucket
+        if (IsNormalBucketInHardMode(other.gameObject))
         {
-            hoveredFish = other.gameObject.GetComponent<FishForwardMovement>();
+            Debug.LogWarning($"[ScoopFish] 檢測到 normalBucket 觸發，在困難模式下忽略");
+            return;
         }
         
-        // 檢測按鈕
-        ButtonEvent button = other.gameObject.GetComponent<ButtonEvent>();
-        if (button != null)
-        {
-            hoveredButton = button;
-            Debug.Log($"[ScoopFish] (觸發器)懸停在按鈕：{other.gameObject.name}");
-        }
-
+        HandleCollisionEnter(other.gameObject);
+        
+        // 特別處理鍵盤
         GrabPoleKeyboardTrigger keyboard = other.gameObject.GetComponent<GrabPoleKeyboardTrigger>();
         if (keyboard == null && other.transform.parent != null)
             keyboard = other.transform.parent.GetComponent<GrabPoleKeyboardTrigger>();
 
         if (keyboard != null)
-            keyboardpanel= keyboard;    
+            keyboardpanel = keyboard;    
     }
 
     void OnCollisionExit(Collision collision)
     {
-        // 魚離開
-        if (collision.gameObject.GetComponent<FishForwardMovement>() == hoveredFish)
-        {
-            hoveredFish = null;
-        }
-        
-        // 按鈕離開
-        ButtonEvent button = collision.gameObject.GetComponent<ButtonEvent>();
-        if (button != null && button == hoveredButton)
-        {
-            hoveredButton = null;
-            Debug.Log($"[ScoopFish] 離開按鈕：{collision.gameObject.name}");
-        }
+        HandleCollisionExit(collision.gameObject);
     }
     
     void OnTriggerExit(Collider other)
     {
-        // 魚離開
-        if (other.gameObject.GetComponent<FishForwardMovement>() == hoveredFish)
-        {
-            hoveredFish = null;
-        }
+        HandleCollisionExit(other.gameObject);
         
-        // 按鈕離開
-        ButtonEvent button = other.gameObject.GetComponent<ButtonEvent>();
-        if (button != null && button == hoveredButton)
-        {
-            hoveredButton = null;
-            Debug.Log($"[ScoopFish] (觸發器)離開按鈕：{other.gameObject.name}");
-        }
-
         GrabPoleKeyboardTrigger keyboard = other.gameObject.GetComponent<GrabPoleKeyboardTrigger>();
         if (keyboard == null && other.transform.parent != null)
             keyboard = other.transform.parent.GetComponent<GrabPoleKeyboardTrigger>();
 
         if (keyboard == keyboardpanel)
-            keyboardpanel= null; 
+            keyboardpanel = null; 
     }
 
     private void SnapFish(FishForwardMovement fish)
@@ -191,6 +150,69 @@ public class ScoopFish : MonoBehaviour
             fish.ReturnToOriginal();
         else
             fish.GoToNewPosition();
+    }
+    
+    /// <summary>
+    /// 【新增】統一的碰撞進入處理函數
+    /// </summary>
+    private void HandleCollisionEnter(GameObject other)
+    {
+        if (other == null) return;
+        
+        // 檢測魚（使用統一的 FishTags 配置）
+        if (FishTags.IsFish(other))
+        {
+            hoveredFish = other.GetComponent<FishForwardMovement>();
+        }
+        
+        // 檢測按鈕
+        ButtonEvent button = other.GetComponent<ButtonEvent>();
+        if (button != null)
+        {
+            hoveredButton = button;
+            Debug.Log($"[ScoopFish] 懸停在按鈕：{other.name}");
+        }
+    }
+    
+    /// <summary>
+    /// 【新增】統一的碰撞離開處理函數
+    /// </summary>
+    private void HandleCollisionExit(GameObject other)
+    {
+        if (other == null) return;
+        
+        // 魚離開
+        if (other.GetComponent<FishForwardMovement>() == hoveredFish)
+        {
+            hoveredFish = null;
+        }
+        
+        // 按鈕離開
+        ButtonEvent button = other.GetComponent<ButtonEvent>();
+        if (button != null && button == hoveredButton)
+        {
+            hoveredButton = null;
+            Debug.Log($"[ScoopFish] 離開按鈕：{other.name}");
+        }
+    }
+    
+    /// <summary>
+    /// 【新增】檢查是否為 normalBucket 在困難模式下
+    /// </summary>
+    private bool IsNormalBucketInHardMode(GameObject other)
+    {
+        if (other == null) return false;
+        
+        // 只在困難模式下檢查
+        if (MultiBucketManager.Instance == null || !MultiBucketManager.Instance.IsHardMode)
+            return false;
+        
+        BucketEvent normalModeBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
+        if (normalModeBucket == null)
+            return false;
+        
+        BucketEvent otherBucket = other.GetComponent<BucketEvent>();
+        return otherBucket == normalModeBucket;
     }
     
     /// <summary>

@@ -84,6 +84,13 @@ public class BucketEvent : MonoBehaviour
         // make sure initialized.
         if (!isInitialized) return;
         
+        // 【修正】確保此水桶的 GameObject 是啟用的
+        if (!gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning($"[BucketEvent] {gameObject.name} 未啟用，忽略魚的進入事件");
+            return;
+        }
+        
         string fishTag = GetFishTag(other.gameObject);
         
         if (!string.IsNullOrEmpty(fishTag))

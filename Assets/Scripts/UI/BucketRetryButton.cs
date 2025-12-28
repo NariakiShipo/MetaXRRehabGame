@@ -105,7 +105,7 @@ public class BucketRetryButton : MonoBehaviour
         
         Debug.Log($"[BucketRetryButton] 玩家按下重試按鈕（水桶 {bucketIndex + 1}）");
         
-        // 呼叫 MultiBucketManager 重置單一水桶
+        // 呼叫 MultiBucketManager 重置單一水桶，清空桶內全部的魚
         multiBucketManager.ResetSingleBucket(bucketIndex);
         
         // 隱藏錯誤指示器
@@ -114,8 +114,8 @@ public class BucketRetryButton : MonoBehaviour
             errorIndicator.SetActive(false);
         }
         
-        // 隱藏按鈕（任務重置後不再需要重試按鈕）
-        HideButton();
+        // 【修改】移除隱藏按鈕的邏輯，讓重試按鈕保持可被按下
+        // HideButton();
         
         // 更新按鈕文字
         UpdateButtonText(false);
@@ -161,8 +161,7 @@ public class BucketRetryButton : MonoBehaviour
                 errorIndicator.SetActive(false);
             }
             
-            // 隱藏按鈕（完成後不需要重試）
-            HideButton();
+            // 【修改】移除隱藏按鈕的邏輯，讓按鈕保持可被按下
             
             // 更新按鈕文字
             UpdateButtonText(false);
