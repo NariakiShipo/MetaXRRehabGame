@@ -88,6 +88,16 @@ public class Fish
     }
 
     /// <summary>
+    /// 增加已生成數量（當重新生成魚時使用）
+    /// </summary>
+    /// <param name="amount">增加的數量（default: 1）</param>
+    public void IncrementSpawned(int amount = 1)
+    {
+        spawnedAmount += amount;
+        Debug.Log($"[Fish] {color} spawned amount increased by {amount}, now: {spawnedAmount}");
+    }
+
+    /// <summary>
     /// get progress（0.0 ~ 1.0）
     /// </summary>
     /// <returns>progress</returns>

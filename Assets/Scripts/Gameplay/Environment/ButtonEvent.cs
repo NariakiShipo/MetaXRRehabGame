@@ -343,7 +343,7 @@ public class ButtonEvent : MonoBehaviour
         if (enableHoverAnimation)
         {
             targetScale = originalScale * hoverScale.x;
-            targetPosition = originalPosition + new Vector3(0, floatHeight, 0);
+            targetPosition = originalPosition + new Vector3(0, 0, 0);
         }
     }
     

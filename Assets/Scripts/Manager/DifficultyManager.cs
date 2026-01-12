@@ -218,22 +218,15 @@ public class DifficultyManager : MonoBehaviour
             scoreManager.SetDifficulty(currentDifficulty.GetTaskType());
         }
         
-        // 配置水桶模式（切換普通/困難模式水桶）
+        // 【修改】移除水桶啟用邏輯 - 應在 GameModeManager 遊戲真正開始時啟用
+        // 避免在「難度選擇階段」就顯示水桶
+        // 水桶的啟用會在 GameModeManager.StartGameWithDifficulty() 中進行
+        
+        // 只記錄任務類型供後續使用
         if (MultiBucketManager.Instance != null)
         {
             TaskType taskType = currentDifficulty.GetTaskType();
-            if (taskType == TaskType.MultiStage)
-            {
-                // 困難模式會在 HardModeManager.SetupMultiBuckets() 中啟用多水桶
-                MultiBucketManager.Instance.ActivateHardMode();
-                Debug.Log("[DifficultyManager] 困難模式 - 水桶將由 HardModeManager 設置");
-            }
-            else
-            {
-                // 簡單/普通模式使用普通水桶
-                MultiBucketManager.Instance.ActivateNormalMode();
-                Debug.Log("[DifficultyManager] 普通模式 - 已啟用普通水桶");
-            }
+            Debug.Log($"[DifficultyManager] 任務類型已配置: {taskType} (水桶啟用延遲至遊戲開始)");
         }
     }
     

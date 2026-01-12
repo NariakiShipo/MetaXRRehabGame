@@ -121,6 +121,8 @@ public class MultiBucketManager : MonoBehaviour
             if (normalModeBucketEvent != null)
             {
                 Debug.Log($"[MultiBucketManager] ✅ 普通模式水桶 {normalModeBucket.name} - BucketEvent 已找到");
+                // ✅ 訂閱 Data Layer 事件
+                SubscribeToBucketEvents(normalModeBucketEvent);
             }
             else
             {
@@ -151,6 +153,8 @@ public class MultiBucketManager : MonoBehaviour
                 else
                 {
                     Debug.Log($"[MultiBucketManager] ✅ 困難模式水桶 [{i}] {bucket.name} - BucketEvent 已找到");
+                    // ✅ 訂閱 Data Layer 事件
+                    SubscribeToBucketEvents(bucketEvent);
                 }
                 bucketEvents.Add(bucketEvent);
             }
@@ -173,6 +177,86 @@ public class MultiBucketManager : MonoBehaviour
         
         Debug.Log($"[MultiBucketManager] 初始化完成 - 困難模式水桶數量: {bucketPool.Count}, 有效 BucketEvent: {bucketEvents.FindAll(b => b != null).Count}");
         Debug.Log("===========================================");
+    }
+    
+    /// <summary>
+    /// ✅ 訂閱 BucketEvent 的數據變更事件（Data Layer → Business Layer）
+    /// </summary>
+    private void SubscribeToBucketEvents(BucketEvent bucketEvent)
+    {
+        if (bucketEvent == null) return;
+        
+        bucketEvent.OnDataChanged.AddListener(OnBucketDataChanged);
+        Debug.Log($"[MultiBucketManager] 已訂閱 {bucketEvent.gameObject.name} 的數據變更事件");
+    }
+    
+    /// <summary>
+    /// ✅ 處理來自 BucketEvent (Data Layer) 的數據變更通知
+    /// </summary>
+    private void OnBucketDataChanged(BucketDataChangedEvent eventData)
+    {
+        Debug.Log($"[MultiBucketManager] 收到水桶數據變更事件 - 類型: {eventData.EventType}, 水桶索引: {eventData.BucketIndex}");
+        
+        switch (eventData.EventType)
+        {
+            case BucketEventType.FishAdded:
+                HandleFishAdded(eventData);
+                break;
+            case BucketEventType.FishRemoved:
+                HandleFishRemoved(eventData);
+                break;
+            case BucketEventType.BucketCleared:
+                HandleBucketCleared(eventData);
+                break;
+            case BucketEventType.Full:
+                HandleBucketFull(eventData);
+                break;
+            case BucketEventType.ColorMismatch:
+                HandleColorMismatch(eventData);
+                break;
+            case BucketEventType.FishLocked:
+                HandleFishLocked(eventData);
+                break;
+        }
+    }
+    
+    private void HandleFishAdded(BucketDataChangedEvent eventData)
+    {
+        Debug.Log($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 添加了魚，當前數量: {eventData.CurrentCount}");
+        
+        // 檢查是否達到容量
+        if (eventData.CurrentCount == eventData.Capacity && eventData.Capacity > 0)
+        {
+            Debug.Log($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 已滿！");
+            OnBucketStageCompleted?.Invoke(eventData.BucketIndex);
+        }
+    }
+    
+    private void HandleFishRemoved(BucketDataChangedEvent eventData)
+    {
+        Debug.Log($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 移除了魚，當前數量: {eventData.CurrentCount}");
+    }
+    
+    private void HandleBucketCleared(BucketDataChangedEvent eventData)
+    {
+        Debug.Log($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 已清空");
+    }
+    
+    private void HandleBucketFull(BucketDataChangedEvent eventData)
+    {
+        Debug.LogWarning($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 已滿，拒絕新魚");
+        OnBucketError?.Invoke(eventData.BucketIndex, "水桶已滿");
+    }
+    
+    private void HandleColorMismatch(BucketDataChangedEvent eventData)
+    {
+        Debug.LogWarning($"[MultiBucketManager] 水桶 {eventData.BucketIndex} 顏色錯誤 - 期望: {eventData.TargetColor}, 實際: {eventData.FishColor}");
+        OnBucketError?.Invoke(eventData.BucketIndex, "魚顏色錯誤");
+    }
+    
+    private void HandleFishLocked(BucketDataChangedEvent eventData)
+    {
+        Debug.LogWarning($"[MultiBucketManager] 水桶 {eventData.BucketIndex} - 魚已鎖定，無法移除");
     }
     
     /// <summary>
@@ -275,6 +359,7 @@ public class MultiBucketManager : MonoBehaviour
                     bucketEvents[i].SetHardMode(true);
                     bucketEvents[i].SetMultiBucketManaged(true);  // 標記為被管理
                     bucketEvents[i].ClearBucket();
+                    bucketEvents[i].ResetStatus();  // ✅ 重置錯誤狀態，防止上一個任務的 Error 狀態阻擋新任務
                     
                     Debug.Log($"    - ✅ BucketEvent 已配置 (stageIndex={i}, capacity={stage.count}, targetColor={stage.targetColor})");
                 }
@@ -442,19 +527,19 @@ public class MultiBucketManager : MonoBehaviour
         
         isHardMode = true;
         
-        // // 隱藏普通模式水桶 - 確保徹底關閉
-        // if (normalModeBucket != null)
-        // {
-        //     normalModeBucket.SetActive(false);
+        // 隱藏普通模式水桶 - 確保徹底關閉
+        if (normalModeBucket != null)
+        {
+            normalModeBucket.SetActive(false);
             
-        //     // 【修正】額外禁用 Collider，防止困難模式下的魚誤觸發
-        //     Collider normalBucketCollider = normalModeBucket.GetComponent<Collider>();
-        //     if (normalBucketCollider != null)
-        //     {
-        //         normalBucketCollider.enabled = false;
-        //         Debug.Log($"[MultiBucketManager] 已禁用普通模式水桶的 Collider");
-        //     }
-            
+            // // 【修正】額外禁用 Collider，防止困難模式下的魚誤觸發
+            // Collider normalBucketCollider = normalModeBucket.GetComponent<Collider>();
+            // if (normalBucketCollider != null)
+            // {
+            //     normalBucketCollider.enabled = false;
+            //     Debug.Log($"[MultiBucketManager] 已禁用普通模式水桶的 Collider");
+            // }
+        }
         //     if (normalModeBucketEvent != null)
         //     {
         //         normalModeBucketEvent.SetHardMode(false);

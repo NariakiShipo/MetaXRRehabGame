@@ -1,13 +1,21 @@
 using UnityEngine;
 
 /// <summary>
-/// 确认按钮处理器 - 触发任务验证
+/// 確認按鈕處理器 - 只處理用戶輸入，不包含業務邏輯
+/// Event Layer - 將用戶指令傳遞給 Business Layer
+/// 
+/// 職責：
+/// 1. 處理用戶按鈕輸入
+/// 2. 調用 BucketManager (Business Layer) 執行驗證
+/// 3. 處理音效反饋（UI 層面）
+/// 4. 不直接操作 Data Layer (BucketEvent)
 /// </summary>
 public class ConfirmButtonHandler : MonoBehaviour
 {
-    [Header("引用")]
-    [SerializeField] private TaskManager taskManager;
-    [SerializeField] private GameModeManager gameModeManager;
+    [Header("依賴（Business Layer）")]
+    private BucketManager bucketManager;
+    
+    [Header("音效設置")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip correctSound;
     [SerializeField] private AudioClip incorrectSound;
@@ -15,131 +23,76 @@ public class ConfirmButtonHandler : MonoBehaviour
     
     private void Awake()
     {
-        // 使用 ServiceLocator 獲取服務（使用 TryGet 避免錯誤日誌）
-        if (taskManager == null)
+        // 獲取 Business Layer 服務
+        if (!ServiceLocator.Instance.TryGet(out bucketManager))
         {
-            if (!ServiceLocator.Instance.TryGet(out taskManager))
-            {
-                taskManager = FindFirstObjectByType<TaskManager>();
-            }
+            Debug.LogError("[ConfirmButtonHandler] BucketManager 未找到！");
         }
         
-        if (gameModeManager == null)
+        // 訂閱 Business Layer 的事件（音效反饋）
+        if (bucketManager != null)
         {
-            if (!ServiceLocator.Instance.TryGet(out gameModeManager))
-            {
-                gameModeManager = FindFirstObjectByType<GameModeManager>();
-            }
+            bucketManager.OnValidationSuccess.AddListener(PlayCorrectSound);
+            bucketManager.OnValidationFailed.AddListener(PlayResetSound);
+            bucketManager.OnValidationIncomplete.AddListener(PlayIncorrectSound);
         }
         
-        // ✅ 移除了直接的 bucketEvent SerializeField 和初始化
-        // BucketEvent 現在由 GetActiveBucketEvent() 動態獲取
+        Debug.Log("[ConfirmButtonHandler] ✅ Event Layer 初始化完成");
     }
     
-    /// <summary>
-    /// ✅ 獲取當前活躍的 BucketEvent（改為使用 MultiBucketManager）
-    /// </summary>
-    private BucketEvent GetActiveBucketEvent()
+    private void OnDestroy()
     {
-        // 優先使用 MultiBucketManager
-        if (MultiBucketManager.Instance != null)
+        // 取消訂閱
+        if (bucketManager != null)
         {
-            if (!MultiBucketManager.Instance.IsHardMode)
-            {
-                // 普通模式：從 MultiBucketManager 獲取普通水桶
-                BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
-                if (normalBucket != null)
-                {
-                    return normalBucket;
-                }
-            }
-            // 困難模式：使用 HardModeManager 的驗證邏輯，這裡不需要單獨的 BucketEvent
+            bucketManager.OnValidationSuccess.RemoveListener(PlayCorrectSound);
+            bucketManager.OnValidationFailed.RemoveListener(PlayResetSound);
+            bucketManager.OnValidationIncomplete.RemoveListener(PlayIncorrectSound);
         }
-        
-        // 備用方案：直接查找（如果 MultiBucketManager 無法提供）
-        return FindFirstObjectByType<BucketEvent>();
     }
     
     /// <summary>
-    /// 确认按钮按下（由ButtonEvent的UnityEvent调用）
+    /// 確認按鈕按下（由 ButtonEvent 的 UnityEvent 調用）
+    /// ✅ 只處理輸入，將業務邏輯委託給 BucketManager
     /// </summary>
     public void OnConfirmButtonPressed()
     {
-        if (taskManager == null)
+        Debug.Log("[ConfirmButtonHandler] 玩家按下確認按鈕");
+        
+        if (bucketManager == null)
         {
-            Debug.LogWarning("[ConfirmButtonHandler] TaskManager 未设置");
+            Debug.LogError("[ConfirmButtonHandler] BucketManager 為 null！");
             return;
         }
         
-        // 困難模式平行任務：使用 MultiBucketManager 驗證
-        if (MultiBucketManager.Instance != null && MultiBucketManager.Instance.IsHardMode)
+        // ✅ 將驗證指令傳遞給 Business Layer
+        // 不再直接操作 BucketEvent 或包含業務邏輯
+        bucketManager.ValidateActiveBucket();
+    }
+    
+    // ========== UI 反饋方法（由 BucketManager 事件觸發）==========
+    
+    private void PlayCorrectSound()
+    {
+        if (audioSource != null && correctSound != null)
         {
-            Debug.Log("[ConfirmButtonHandler] 困難模式平行任務驗證");
-            
-            bool allValid = MultiBucketManager.Instance.ValidateAllBuckets();
-            
-            if (allValid)
-            {
-                audioSource.PlayOneShot(correctSound);
-                Debug.Log("[ConfirmButtonHandler] 所有水桶任務完成！");
-                // MultiBucketManager.OnAllStagesCompleted 會觸發 GameModeManager.OnAllBucketsCompleted
-            }
-            else
-            {
-                audioSource.PlayOneShot(incorrectSound);
-                Debug.Log("[ConfirmButtonHandler] 尚有水桶未完成或有錯誤");
-            }
-            return;
+            audioSource.PlayOneShot(correctSound);
         }
-        
-        // 普通模式或舊版困難模式：使用原有驗證邏輯
-        BucketEvent activeBucket = GetActiveBucketEvent();
-        
-        if (activeBucket == null)
+    }
+    
+    private void PlayResetSound()
+    {
+        if (audioSource != null && resetSound != null)
         {
-            Debug.LogWarning("[ConfirmButtonHandler] 無法獲取有效的 BucketEvent");
-            return;
+            audioSource.PlayOneShot(resetSound);
         }
-        
-        Debug.Log($"[ConfirmButtonHandler] 使用水桶: {activeBucket.gameObject.name}");
-        
-        // 获取桶中的鱼
-        var fishInBucket = activeBucket.GetFishInBucket();
-        
-        // 验证任务
-        TaskValidationResult result = taskManager.ValidateTask(fishInBucket);
-        
-        Debug.Log($"[ConfirmButtonHandler] 验证结果: {result}");
-        
-        // 根据结果处理
-        switch (result)
+    }
+    
+    private void PlayIncorrectSound()
+    {
+        if (audioSource != null && incorrectSound != null)
         {
-            case TaskValidationResult.Success:
-                // 任务完成，清空桶并生成新任务
-                activeBucket.ClearBucket();
-                audioSource.PlayOneShot(correctSound);
-                Debug.Log("[ConfirmButtonHandler] 任务完成，生成新任务");
-                // GameModeManager会监听TaskValidated事件并生成新任务
-                break;
-                
-            case TaskValidationResult.Failed:
-                // 任务失败，清空桶并重置任务
-                activeBucket.ClearBucket();
-              
-                audioSource.PlayOneShot(resetSound);
-                Debug.Log("[ConfirmButtonHandler] 任務失敗，重新生成任務和魚");
-                break;
-                
-            case TaskValidationResult.Incomplete:
-                // 任务不完整，提示玩家继续完成任务
-                audioSource.PlayOneShot(incorrectSound);
-                break;
-                
-            case TaskValidationResult.SubTaskComplete:
-                // 子任务完成，清空桶并继续下一个子任务
-                activeBucket.ClearBucket();
-                audioSource.PlayOneShot(correctSound);
-                break;
+            audioSource.PlayOneShot(incorrectSound);
         }
     }
 }

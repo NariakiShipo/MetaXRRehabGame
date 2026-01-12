@@ -535,6 +535,161 @@ public class FishSpawnManager : MonoBehaviour
     }
     
     /// <summary>
+    /// 重新生成指定颜色和数量的鱼（当 ClearBucket 销毁鱼后使用）
+    /// </summary>
+    /// <param name="fishToRegenerate">需要重新生成的鱼（颜色 -> 数量）</param>
+    public void RegenerateFish(Dictionary<string, int> fishToRegenerate)
+    {
+        if (fishToRegenerate == null || fishToRegenerate.Count == 0)
+        {
+            Debug.LogWarning("[FishSpawnManager] 没有需要重新生成的鱼");
+            return;
+        }
+        
+        Debug.Log($"[FishSpawnManager] 开始重新生成 {fishToRegenerate.Count} 种鱼");
+        
+        // 更新 Fish 数据的 spawnedAmount
+        foreach (var kvp in fishToRegenerate)
+        {
+            string color = kvp.Key;
+            int count = kvp.Value;
+            
+            Fish fishData = fish.Find(f => f.color == color);
+            if (fishData != null)
+            {
+                fishData.IncrementSpawned(count);
+                Debug.Log($"[FishSpawnManager] 更新 {color} 计数，增加 {count}");
+            }
+            else
+            {
+                Debug.LogWarning($"[FishSpawnManager] 找不到颜色 {color} 的 Fish 数据");
+            }
+        }
+        
+        // 启动协程生成新鱼
+        StartCoroutine(SpawnSpecificFish(fishToRegenerate));
+    }
+    
+    /// <summary>
+    /// 生成指定颜色和数量的鱼（协程）
+    /// </summary>
+    private IEnumerator SpawnSpecificFish(Dictionary<string, int> fishToSpawn)
+    {
+        // 确保有生成点
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            Debug.LogError("[FishSpawnManager] 没有设置生成点！");
+            yield break;
+        }
+        
+        // 准备生成点列表
+        List<Transform> availableSpawnPoints = PrepareSpawnPointsList();
+        
+        if (availableSpawnPoints.Count == 0)
+        {
+            Debug.LogError("[FishSpawnManager] 没有可用的生成点！");
+            yield break;
+        }
+        
+        int spawnPointIndex = Random.Range(0, availableSpawnPoints.Count); // 随机起始点
+        int totalSpawned = 0;
+        
+        // 遍历需要生成的鱼
+        foreach (var kvp in fishToSpawn)
+        {
+            string color = kvp.Key;
+            int count = kvp.Value;
+            
+            // 找到对应的鱼 prefab 索引
+            int prefabIndex = -1;
+            for (int i = 0; i < fish.Count; i++)
+            {
+                if (fish[i].color == color)
+                {
+                    prefabIndex = i;
+                    break;
+                }
+            }
+            
+            if (prefabIndex == -1 || prefabIndex >= fishPrefab.Length)
+            {
+                Debug.LogWarning($"[FishSpawnManager] 找不到颜色 {color} 的 prefab");
+                continue;
+            }
+            
+            Debug.Log($"[FishSpawnManager] 重新生成 {color}: {count} 只");
+            
+            // 生成指定数量的鱼
+            for (int j = 0; j < count; j++)
+            {
+                // 检查生成点
+                if (spawnPointIndex >= availableSpawnPoints.Count)
+                {
+                    if (allowReuseSpawnPoints)
+                    {
+                        spawnPointIndex = 0;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[FishSpawnManager] 生成点不足，剩余 {count - j} 只 {color} 未生成");
+                        break;
+                    }
+                }
+                
+                // 获取生成点位置
+                Transform spawnPoint = availableSpawnPoints[spawnPointIndex];
+                Vector3 spawnPosition = spawnPoint.position;
+                
+                // 生成鱼 GameObject
+                GameObject spawnedFish = Instantiate(fishPrefab[prefabIndex], spawnPosition, Quaternion.identity);
+                
+                if (spawnedFish == null)
+                {
+                    Debug.LogError($"[FishSpawnManager] 无法生成 {color} 的 GameObject");
+                    continue;
+                }
+                
+                // 添加 FishData 组件
+                FishData fishDataComponent = spawnedFish.GetComponent<FishData>();
+                if (fishDataComponent == null)
+                {
+                    fishDataComponent = spawnedFish.AddComponent<FishData>();
+                }
+                fishDataComponent.SetPrefabName(color);
+                
+                // 注入 bucketReturnPoint
+                FishForwardMovement movement = spawnedFish.GetComponent<FishForwardMovement>();
+                if (movement != null && bucketReturnPoint != null)
+                {
+                    movement.SetBucketReturnPoint(bucketReturnPoint);
+                }
+                
+                // 初始化 Rigidbody
+                Rigidbody rb = spawnedFish.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.useGravity = false;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    
+                    // 延迟初始化移动
+                    StartCoroutine(InitializeFishMovement(spawnedFish, 0.2f));
+                }
+                
+                Debug.Log($"[FishSpawnManager] 重新生成 {color} #{j+1} 在位置 {spawnPosition}");
+                
+                spawnPointIndex++;
+                totalSpawned++;
+                
+                // 延迟
+                yield return new WaitForSeconds(spawnDelay);
+            }
+        }
+        
+        Debug.Log($"[FishSpawnManager] 重新生成完成，总共 {totalSpawned} 只鱼");
+    }
+    
+    /// <summary>
     /// 设置生成模式（难度）- 控制生成哪些颜色的鱼
     /// [已弃用] 请使用 ApplySpawnConfig 替代
     /// </summary>

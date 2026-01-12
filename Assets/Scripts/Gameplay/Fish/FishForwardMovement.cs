@@ -206,11 +206,15 @@ public class FishForwardMovement : MonoBehaviour
         BucketEvent bucketEventComponent = bucket.GetComponent<BucketEvent>();
         BucketEvent normalModeBucket = MultiBucketManager.Instance?.GetNormalModeBucketEvent();
         
-        // 如果這個桶是 normalBucket，在困難模式下應該被排除
-        if (normalModeBucket != null && bucketEventComponent == normalModeBucket)
+        // ✅ 只在困難模式下才排除 normalBucket
+        if (MultiBucketManager.Instance != null && MultiBucketManager.Instance.IsHardMode)
         {
-            Debug.LogWarning($"[FishForwardMovement] 檢測到 normalBucket，在困難模式下應被排除，不更新返回點");
-            return;
+            // 如果這個桶是 normalBucket，在困難模式下應該被排除
+            if (normalModeBucket != null && bucketEventComponent == normalModeBucket)
+            {
+                Debug.LogWarning($"[FishForwardMovement] 檢測到 normalBucket，在困難模式下應被排除，不更新返回點");
+                return;
+            }
         }
         
         // 優先從 BucketEvent 取得設定的返回點

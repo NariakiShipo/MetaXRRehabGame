@@ -15,7 +15,8 @@ public class GameBootstrapper : MonoBehaviour
     [SerializeField] private GameModeManager gameModeManager;
     [SerializeField] private DifficultyManager difficultyManager;
     [SerializeField] private FishSpawnManager fishSpawnManager;
-    [SerializeField] private MultiBucketManager multiBucketManager;  // ✅ 新增：統一管理所有水桶
+    [SerializeField] private MultiBucketManager multiBucketManager;
+    [SerializeField] private BucketManager bucketManager;  // ✅ 新增：Business Layer 水桶管理器
     
     [Header("UI References")]
     [SerializeField] private TaskDisplayUI taskDisplayUI;
@@ -33,7 +34,8 @@ public class GameBootstrapper : MonoBehaviour
         if (gameModeManager == null) gameModeManager = FindFirstObjectByType<GameModeManager>();
         if (difficultyManager == null) difficultyManager = FindFirstObjectByType<DifficultyManager>();
         if (fishSpawnManager == null) fishSpawnManager = FindFirstObjectByType<FishSpawnManager>();
-        if (multiBucketManager == null) multiBucketManager = FindFirstObjectByType<MultiBucketManager>();  // ✅ 新增
+        if (multiBucketManager == null) multiBucketManager = FindFirstObjectByType<MultiBucketManager>();
+        if (bucketManager == null) bucketManager = FindFirstObjectByType<BucketManager>();  // ✅ 新增
         
         // UI and Handlers
         if (taskDisplayUI == null) taskDisplayUI = FindFirstObjectByType<TaskDisplayUI>();
@@ -54,14 +56,15 @@ public class GameBootstrapper : MonoBehaviour
         if (gameModeManager != null) locator.Register(gameModeManager);
         if (difficultyManager != null) locator.Register(difficultyManager);
         if (fishSpawnManager != null) locator.Register(fishSpawnManager);
-        if (multiBucketManager != null) locator.Register(multiBucketManager);  // ✅ 新增
+        if (multiBucketManager != null) locator.Register(multiBucketManager);
+        if (bucketManager != null) locator.Register(bucketManager);  // ✅ 新增
         
         // UI and Handlers
         if (taskDisplayUI != null) locator.Register(taskDisplayUI);
         if (confirmButtonHandler != null) locator.Register(confirmButtonHandler);
         if (retryButtonHandler != null) locator.Register(retryButtonHandler);
 
-        Debug.Log("[GameBootstrapper] ✅ 所有服務已註冊");
+        Debug.Log("[GameBootstrapper] ✅ 所有服務已註冊（含 BucketManager - Business Layer）");
     }
 
     // Clear services when uninstalling a scenario

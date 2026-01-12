@@ -11,6 +11,7 @@ public class GameModeManager : MonoBehaviour
     private ScoreManager scoreManager;
     private DifficultyManager difficultyManager;
     private HardModeManager hardModeManager;
+    private MultiBucketManager multiBucketManager;  // ✅ 新增
     
     [Header("UI References")]
     [Tooltip("難度選擇按鈕的父物體（選擇後會隱藏）")]
@@ -41,8 +42,7 @@ public class GameModeManager : MonoBehaviour
         taskManager = GetServiceOrFind<TaskManager>();
         scoreManager = GetServiceOrFind<ScoreManager>();
         fishSpawnManager = GetServiceOrFind<FishSpawnManager>();
-        hardModeManager = GetServiceOrFind<HardModeManager>();
-        
+        hardModeManager = GetServiceOrFind<HardModeManager>();        multiBucketManager = GetServiceOrFind<MultiBucketManager>();  // ✅ 新增        
         // 如果 ServiceLocator 沒有 HardModeManager，嘗試使用單例
         if (hardModeManager == null)
         {
@@ -72,9 +72,9 @@ public class GameModeManager : MonoBehaviour
         }
         
         // 訂閱 MultiBucketManager 的完成事件（困難模式專用）
-        if (MultiBucketManager.Instance != null)
+        if (multiBucketManager != null)
         {
-            MultiBucketManager.Instance.OnAllStagesCompleted.AddListener(OnAllBucketsCompleted);
+            multiBucketManager.OnAllStagesCompleted.AddListener(OnAllBucketsCompleted);
             Debug.Log("[GameModeManager] 已訂閱 MultiBucketManager.OnAllStagesCompleted 事件");
         }
         
@@ -116,9 +116,9 @@ public class GameModeManager : MonoBehaviour
         }
         
         // 取消訂閱 MultiBucketManager 事件
-        if (MultiBucketManager.Instance != null)
+        if (multiBucketManager != null)
         {
-            MultiBucketManager.Instance.OnAllStagesCompleted.RemoveListener(OnAllBucketsCompleted);
+            multiBucketManager.OnAllStagesCompleted.RemoveListener(OnAllBucketsCompleted);
         }
     }
     
@@ -373,6 +373,24 @@ public class GameModeManager : MonoBehaviour
         
         // 注意：分数系统已由DifficultyManager配置，不需要在这里再设置
         
+        // 【新增】啟用水桶 - 遊戲真正開始時才顯示
+        if (multiBucketManager != null && difficultyManager != null)
+        {
+            TaskType taskType = difficultyManager.GetCurrentTaskType();
+            if (taskType == TaskType.MultiStage)
+            {
+                // 困難模式 - 多水桶將由 HardModeManager 稍後設置
+                multiBucketManager.ActivateHardMode();
+                Debug.Log("[GameModeManager] 困難模式 - 已啟用多水桶準備");
+            }
+            else
+            {
+                // 簡單/普通模式 - 立即啟用普通水桶
+                multiBucketManager.ActivateNormalMode();
+                Debug.Log("[GameModeManager] 普通模式 - 已啟用普通水桶");
+            }
+        }
+        
         // 啟動其他遊戲系統
         InitializeGameSystems(true);
         
@@ -540,24 +558,24 @@ public class GameModeManager : MonoBehaviour
     private void ClearActiveBucket()
     {
         // 如果有 MultiBucketManager，根據當前模式清空正確的水桶
-        if (MultiBucketManager.Instance != null)
+        if (multiBucketManager != null)
         {
             // 直接從 DifficultyManager 獲取當前任務類型，而非依賴 IsHardMode flag
             TaskType taskType = difficultyManager != null ? difficultyManager.GetCurrentTaskType() : TaskType.CountOnly;
             
-            Debug.Log($"[GameModeManager] 🪣 清空水桶 - TaskType: {taskType}, IsHardMode: {MultiBucketManager.Instance.IsHardMode}");
+            Debug.Log($"[GameModeManager] 🪣 清空水桶 - TaskType: {taskType}, IsHardMode: {multiBucketManager.IsHardMode}");
             
             if (taskType == TaskType.MultiStage)
             {
                 // 困難模式：由 MultiBucketManager 清空所有水桶
-                MultiBucketManager.Instance.ClearAllBuckets();
+                multiBucketManager.ClearAllBuckets();
                 Debug.Log("[GameModeManager] 已清空所有困難模式水桶");
                 return;
             }
             else
             {
                 // 普通模式：清空普通水桶
-                BucketEvent normalBucket = MultiBucketManager.Instance.GetNormalModeBucketEvent();
+                BucketEvent normalBucket = multiBucketManager.GetNormalModeBucketEvent();
                 if (normalBucket != null)
                 {
                     normalBucket.ClearBucket();

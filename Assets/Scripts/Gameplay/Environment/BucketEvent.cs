@@ -1,7 +1,19 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
+/// <summary>
+/// 水桶數據模型 - Data Layer
+/// 只負責數據存儲和變更通知，不包含業務邏輯
+/// 
+/// 職責：
+/// 1. 追蹤桶內的魚數據
+/// 2. 發布數據變更事件
+/// 3. 提供數據訪問接口
+/// 4. 不依賴任何 Business Layer (Managers)
+/// </summary>
 public class BucketEvent : MonoBehaviour
 {
     [SerializeField] private TMP_Text bucketText;
@@ -52,10 +64,23 @@ public class BucketEvent : MonoBehaviour
     [SerializeField] private float ejectForce = 3f;
     
     [Tooltip("魚進入此桶後的返回點位置（可設為桶子的子物件）")]
-    [SerializeField] private Transform fishReturnPoint; 
+    [SerializeField] private Transform fishReturnPoint;
+    
+    // ========== Data Layer 事件：向 Business Layer 發布數據變更 ==========
+    [Header("數據事件（向 Business Layer 發布）")]
+    public UnityEvent<BucketDataChangedEvent> OnDataChanged;
+    
+    // 用於通知 BucketManager 的引用（依賴注入）
+    private BucketManager bucketManager;
 
     private void Awake()
     {
+        // 初始化事件
+        if (OnDataChanged == null)
+        {
+            OnDataChanged = new UnityEvent<BucketDataChangedEvent>();
+        }
+        
         // 使用 FishTags 動態初始化字典（確保與 FishTags.cs 同步）
         foreach (string fishTag in FishTags.GetAllFishTags())
         {
@@ -70,6 +95,12 @@ public class BucketEvent : MonoBehaviour
     {
         // 通过 ServiceLocator 获取 FishSpawnManager
         fishSpawnManager = ServiceLocator.Instance.Get<FishSpawnManager>();
+        
+        // ✅ 獲取 BucketManager（Business Layer）用於發布事件
+        if (!ServiceLocator.Instance.TryGet(out bucketManager))
+        {
+            Debug.LogWarning($"[BucketEvent] BucketManager 未找到，將無法發布業務事件");
+        }
         
         // initialize Fish data in Start to ensure Generator is ready
         fishes = fishSpawnManager != null ? fishSpawnManager.GetFish() : new List<Fish>();
@@ -92,101 +123,84 @@ public class BucketEvent : MonoBehaviour
         }
         
         string fishTag = GetFishTag(other.gameObject);
+        if (string.IsNullOrEmpty(fishTag)) return;
         
-        if (!string.IsNullOrEmpty(fishTag))
+        Debug.Log($"[BucketEvent] {gameObject.name}: {fishTag} 進入桶子");
+        
+        // ========== 只更新數據，業務邏輯判斷移至 BucketManager ==========
+        FishColor fishColor = FishColorHelper.GetColorFromTag(fishTag);
+        
+        // 創建驗證狀態（純數據，不做業務判斷）
+        BucketValidationState validationState = new BucketValidationState
         {
-            Debug.Log($"[BucketEvent] {gameObject.name}: {fishTag} 進入桶子");
-            Debug.Log($"[BucketEvent] 模式狀態 - isHardMode: {isHardMode}, isMultiBucketManaged: {isMultiBucketManaged}, capacity: {capacity}, targetColor: {targetColor}");
+            IsFull = capacity > 0 && fishGameObjectsInBucket.Count >= capacity,
+            IsColorCorrect = fishColor == targetColor,
+            CurrentCount = fishGameObjectsInBucket.Count,
+            Capacity = capacity,
+            ActualColor = fishColor,
+            TargetColor = targetColor
+        };
+        
+        // ✅ 先將魚添加到列表（所有進入水桶的魚都要記錄，包括顏色錯誤的）
+        // 这样 ClearBucket() 才能清空所有鱼
+        if (!fishGameObjectsInBucket.Contains(other.gameObject))
+        {
+            fishGameObjectsInBucket.Add(other.gameObject);
             
-            // 多水桶模式：只有被 MultiBucketManager 管理的水桶才進行嚴格檢查
-            if (isMultiBucketManaged && capacity > 0)
-            {
-                Debug.Log($"[BucketEvent] 多水桶模式檢查 - 目前魚數: {fishGameObjectsInBucket.Count}/{capacity}");
-                
-                // 檢查是否已經處於錯誤狀態
-                if (currentStatus == BucketStatus.Error)
-                {
-                    Debug.LogWarning($"[BucketEvent] 水桶處於錯誤狀態，請按重試按鈕！");
-                    return;
-                }
-                
-                // 檢查容量
-                if (fishGameObjectsInBucket.Count >= capacity)
-                {
-                    Debug.LogWarning($"[BucketEvent] 水桶已滿！容量: {capacity}");
-                    currentStatus = BucketStatus.Error;
-                    
-                    // 通知 MultiBucketManager 錯誤
-                    if (MultiBucketManager.Instance != null)
-                    {
-                        MultiBucketManager.Instance.OnBucketError?.Invoke(stageIndex, 
-                            $"水桶已滿！只需要 {capacity} 隻魚");
-                    }
-                    return;
-                }
-                
-                // 檢查顏色是否正確
-                FishColor fishColor = FishColorHelper.GetColorFromTag(fishTag);
-                Debug.Log($"[BucketEvent] 顏色比較 - 魚: {fishColor}, 目標: {targetColor}");
-                
-                if (fishColor != targetColor)
-                {
-                    Debug.LogWarning($"[BucketEvent] 顏色錯誤！需要 {FishColorHelper.GetDisplayName(targetColor)}，但放入了 {FishColorHelper.GetDisplayName(fishColor)}");
-                    currentStatus = BucketStatus.Error;
-                    
-                    // 通知 MultiBucketManager
-                    if (MultiBucketManager.Instance != null)
-                    {
-                        MultiBucketManager.Instance.OnBucketError?.Invoke(stageIndex, 
-                            $"顏色錯誤！需要{FishColorHelper.GetDisplayName(targetColor)}");
-                    }
-                    return;
-                }
-                
-                Debug.Log($"[BucketEvent] ✅ 多水桶模式檢查通過");
-            }
-            
-            // 设置鱼的 isInBucket 状态
+            // 設置魚的 isInBucket 狀態
             FishForwardMovement fishMovement = other.GetComponent<FishForwardMovement>();
             if (fishMovement != null)
             {
                 fishMovement.isInBucket = true;
             }
-            
-            // 添加到鱼GameObject列表（任务系统需要）
-            if (!fishGameObjectsInBucket.Contains(other.gameObject))
+        }
+        
+        // 多水桶模式：檢查錯誤情況
+        if (isMultiBucketManaged && capacity > 0)
+        {
+            if (currentStatus == BucketStatus.Error)
             {
-                fishGameObjectsInBucket.Add(other.gameObject);
-                
-                // 困難模式：記錄進入順序並鎖定
-                if (isHardMode)
-                {
-                    fishEntryOrder.Add(other.gameObject);
-                    lockedFish.Add(other.gameObject);
-                    
-                    // 設置 Rigidbody 為 kinematic，阻止抓取
-                    Rigidbody fishRb = other.GetComponent<Rigidbody>();
-                    if (fishRb != null)
-                    {
-                        fishRb.isKinematic = true;
-                        Debug.Log($"[BucketEvent] 困難模式：{fishTag} 已設為 kinematic（不可抓取）");
-                    }
-                    
-                    // 通知 MultiBucketManager（多水桶模式）
-                    if (MultiBucketManager.Instance != null)
-                    {
-                        MultiBucketManager.Instance.OnFishEnteredBucket(stageIndex, other.gameObject);
-                    }
-                    // 通知 HardModeManager（單水桶模式）
-                    else if (HardModeManager.Instance != null)
-                    {
-                        HardModeManager.Instance.OnFishEnteredBucket(other.gameObject);
-                    }
-                    
-                    Debug.Log($"[BucketEvent] 困難模式：{fishTag} 已鎖定 (數量: {fishGameObjectsInBucket.Count}/{capacity})");
-                }
+                Debug.LogWarning($"[BucketEvent] 水桶處於錯誤狀態，請按重試按鈕！");
+                // ❌ 不要在這裡移除魚，因為玩家可能需要重試後清空
+                return;
             }
             
+            if (validationState.IsFull)
+            {
+                Debug.LogWarning($"[BucketEvent] 水桶已滿！容量: {capacity}");
+                currentStatus = BucketStatus.Error;
+                PublishErrorEvent(BucketEventType.Full, validationState, other.gameObject);
+                return;  // 發布錯誤後返回，但魚已在列表中
+            }
+            
+            if (!validationState.IsColorCorrect)
+            {
+                Debug.LogWarning($"[BucketEvent] 顏色錯誤！");
+                currentStatus = BucketStatus.Error;
+                PublishErrorEvent(BucketEventType.ColorMismatch, validationState, other.gameObject);
+                return;  // 發布錯誤後返回，但魚已在列表中
+            }
+        }
+        
+        // 困難模式：記錄進入順序並鎖定（只在顏色正確且不在錯誤狀態時）
+        if (isHardMode && currentStatus != BucketStatus.Error)
+        {
+            if (!fishEntryOrder.Contains(other.gameObject))
+            {
+                fishEntryOrder.Add(other.gameObject);
+                lockedFish.Add(other.gameObject);
+                
+                Rigidbody fishRb = other.GetComponent<Rigidbody>();
+                if (fishRb != null)
+                {
+                    fishRb.isKinematic = true;
+                }
+            }
+        }
+        
+        // ✅ 只在非錯誤狀態下發布正常的數據變更事件和更新計數
+        if (currentStatus != BucketStatus.Error)
+        {
             fishCount += 1;
             fishInBucket[fishTag] += 1;
             
@@ -197,9 +211,57 @@ public class BucketEvent : MonoBehaviour
                 fishData.IncrementCaught();
             }
             
-            UpdateUI();
-            PrintStatistics();
+            // 發布數據變更事件到 Business Layer
+            PublishDataChangedEvent(BucketEventType.FishAdded, validationState, other.gameObject);
         }
+        
+        UpdateUI();
+        PrintStatistics();
+    }
+    
+    /// <summary>
+    /// 發布數據變更事件到 Business Layer（正常事件）
+    /// </summary>
+    private void PublishDataChangedEvent(BucketEventType eventType, BucketValidationState state, GameObject fish)
+    {
+        var eventData = new BucketDataChangedEvent
+        {
+            EventType = eventType,
+            BucketIndex = stageIndex,
+            Fish = fish,
+            FishColor = state.ActualColor,
+            CurrentCount = fishGameObjectsInBucket.Count,
+            Capacity = capacity,
+            TargetColor = targetColor,
+            ValidationState = state
+        };
+        
+        // 發布 UnityEvent
+        OnDataChanged?.Invoke(eventData);
+        
+        // ✅ 通知 BucketManager (Business Layer) 而不是直接調用 MultiBucketManager.Instance
+        bucketManager?.OnFishEntered(stageIndex, fish, state);
+    }
+    
+    /// <summary>
+    /// 發布錯誤事件到 Business Layer
+    /// </summary>
+    private void PublishErrorEvent(BucketEventType eventType, BucketValidationState state, GameObject fish)
+    {
+        var eventData = new BucketDataChangedEvent
+        {
+            EventType = eventType,
+            BucketIndex = stageIndex,
+            Fish = fish,
+            FishColor = state.ActualColor,
+            CurrentCount = fishGameObjectsInBucket.Count,
+            Capacity = capacity,
+            TargetColor = targetColor,
+            ValidationState = state
+        };
+        
+        OnDataChanged?.Invoke(eventData);
+        bucketManager?.OnFishEntered(stageIndex, fish, state);
     }
 
     private void OnTriggerStay(Collider other)
@@ -233,7 +295,17 @@ public class BucketEvent : MonoBehaviour
                     fishRb.angularVelocity = Vector3.zero;
                 }
                 
-                // 可選：這裡可以觸發視覺/聽覺反饋
+                // ✅ 發布鎖定事件（Data Layer 只通知，不決策）
+                FishColor lockedFishColor = FishColorHelper.GetColorFromTag(fishTag);
+                var lockedState = new BucketValidationState
+                {
+                    IsColorCorrect = lockedFishColor == targetColor,
+                    CurrentCount = fishGameObjectsInBucket.Count,
+                    Capacity = capacity,
+                    ActualColor = lockedFishColor,
+                    TargetColor = targetColor
+                };
+                PublishDataChangedEvent(BucketEventType.FishLocked, lockedState, other.gameObject);
                 return;
             }
             
@@ -265,6 +337,18 @@ public class BucketEvent : MonoBehaviour
             {
                 fishData.DecrementCaught();
             }
+            
+            // ✅ 發布魚移除事件到 Business Layer
+            FishColor fishColor = FishColorHelper.GetColorFromTag(fishTag);
+            var state = new BucketValidationState
+            {
+                IsColorCorrect = fishColor == targetColor,
+                CurrentCount = fishGameObjectsInBucket.Count,
+                Capacity = capacity,
+                ActualColor = fishColor,
+                TargetColor = targetColor
+            };
+            PublishDataChangedEvent(BucketEventType.FishRemoved, state, other.gameObject);
             
             UpdateUI();
             PrintStatistics();
@@ -395,17 +479,49 @@ public class BucketEvent : MonoBehaviour
     
     /// <summary>
     /// 清空桶中的所有鱼（任务系统使用）
+    /// Data Layer 只執行清空動作，由 Business Layer 決定何時調用
     /// </summary>
     public void ClearBucket()
     {
         Debug.Log($"[BucketEvent] 清空桶，销毁 {fishGameObjectsInBucket.Count} 条鱼");
+        
+        int clearedCount = fishGameObjectsInBucket.Count;
+        
+        // 记录需要重新生成的鱼（按颜色统计）
+        Dictionary<string, int> fishToRegenerate = new Dictionary<string, int>();
         
         // 销毁所有桶中的鱼
         foreach (GameObject fish in fishGameObjectsInBucket)
         {
             if (fish != null)
             {
+                // 记录鱼的颜色
+                string fishTag = GetFishTag(fish);
+                if (!string.IsNullOrEmpty(fishTag))
+                {
+                    if (!fishToRegenerate.ContainsKey(fishTag))
+                    {
+                        fishToRegenerate[fishTag] = 0;
+                    }
+                    fishToRegenerate[fishTag]++;
+                }
+                
                 Destroy(fish);
+            }
+        }
+        
+        // 调用 FishSpawnManager 重新生成被销毁的鱼
+        if (fishToRegenerate.Count > 0)
+        {
+            FishSpawnManager spawnManager = FindFirstObjectByType<FishSpawnManager>();
+            if (spawnManager != null)
+            {
+                spawnManager.RegenerateFish(fishToRegenerate);
+                Debug.Log($"[BucketEvent] 已请求重新生成 {clearedCount} 条鱼");
+            }
+            else
+            {
+                Debug.LogWarning("[BucketEvent] 无法找到 FishSpawnManager，无法重新生成鱼！");
             }
         }
         
@@ -422,8 +538,34 @@ public class BucketEvent : MonoBehaviour
             fishInBucket[key] = 0;
         }
         
+        // ✅ 發布清空事件（Data Layer 通知 Business Layer）
+        var state = new BucketValidationState
+        {
+            IsColorCorrect = true,
+            CurrentCount = 0,
+            Capacity = capacity,
+            ActualColor = FishColor.Red,
+            TargetColor = targetColor
+        };
+        
+        var eventData = new BucketDataChangedEvent
+        {
+            EventType = BucketEventType.BucketCleared,
+            BucketIndex = stageIndex,
+            Fish = null,
+            FishColor = FishColor.Red,
+            CurrentCount = 0,
+            Capacity = capacity,
+            TargetColor = targetColor,
+            ValidationState = state
+        };
+        
+        OnDataChanged?.Invoke(eventData);
+        
         // 更新UI
         UpdateUI();
+        
+        Debug.Log($"[BucketEvent] 已清空 {clearedCount} 條魚，並通知 Business Layer");
     }
     
     // ========== 困難模式接口 ==========

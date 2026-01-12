@@ -9,7 +9,7 @@ public class ScoopFish : MonoBehaviour
     private FishForwardMovement hoveredFish; // Lantern near pole
     private FishForwardMovement heldFish;    // Lantern currently held
     [SerializeField]private GrabPoleKeyboardTrigger keyboardpanel;
-
+    private GrabPoleKeyboardTrigger triggeredKeyboard; // 已觸發的鍵盤（仿照 pressedButton）
 
     private ButtonEvent hoveredButton; // 懸停的按鈕
     private ButtonEvent pressedButton; // 正在按下的按鈕
@@ -70,11 +70,20 @@ public class ScoopFish : MonoBehaviour
             pressedButton = null;
         }
 
-        if (keyboardpanel != null && grabValue > 0.6f)
+        // 鍵盤面板互動邏輯（仿照按鈕）
+        // 當懸停在鍵盤上且抓取值 > 0.6f 時，觸發鍵盤（且尚未觸發過）
+        if (keyboardpanel != null && grabValue > 0.6f && triggeredKeyboard == null)
         {
             Debug.Log($"[ScoopFish] 嘗試打開keyboard, grabValue={grabValue:F2}");
-            keyboardpanel.OnTriggerPressed();
-            keyboardpanel = null; // optional: prevent multiple calls per press
+            triggeredKeyboard = keyboardpanel;
+            triggeredKeyboard.OnTriggerPressed();
+        }
+        
+        // 當抓取值 < 0.2 時，允許再次觸發
+        if (triggeredKeyboard != null && grabValue < 0.2f)
+        {
+            Debug.Log($"[ScoopFish] 鍵盤觸發狀態重置, grabValue={grabValue:F2}");
+            triggeredKeyboard = null;
         }
 
     }
@@ -121,7 +130,11 @@ public class ScoopFish : MonoBehaviour
             keyboard = other.transform.parent.GetComponent<GrabPoleKeyboardTrigger>();
 
         if (keyboard == keyboardpanel)
-            keyboardpanel = null; 
+        {
+            keyboardpanel = null;
+            triggeredKeyboard = null; // ✅ 離開時重置觸發狀態
+            Debug.Log($"[ScoopFish] 離開鍵盤觸發區域");
+        }
     }
 
     private void SnapFish(FishForwardMovement fish)

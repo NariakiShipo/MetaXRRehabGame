@@ -65,6 +65,9 @@ public class RetryButtonHandler : MonoBehaviour
         // 清空桶
         activeBucket.ClearBucket();
         
+        // ✅ 重置水桶错误状态（防止 Error 状态阻止新鱼进入）
+        activeBucket.ResetStatus();
+        
         // 重置当前子任务进度
         taskManager.RetryCurrentSubTask();
     }
