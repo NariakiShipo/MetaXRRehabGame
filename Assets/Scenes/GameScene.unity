@@ -9933,7 +9933,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -16102,7 +16102,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -16202,7 +16202,7 @@ AudioSource:
   m_PlayOnAwake: 1
   m_Volume: 0.7
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -20457,7 +20457,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2567112554648848490, guid: c45cdd91e305cdf4e99f09232b748b28, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4052083435093612182, guid: c45cdd91e305cdf4e99f09232b748b28, type: 3}
       propertyPath: m_LocalPosition.z
@@ -20473,7 +20473,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6130765839386671351, guid: c45cdd91e305cdf4e99f09232b748b28, type: 3}
       propertyPath: m_Text
-      value: test
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6130765839386671351, guid: c45cdd91e305cdf4e99f09232b748b28, type: 3}
       propertyPath: m_ContentType
