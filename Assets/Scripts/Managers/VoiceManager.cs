@@ -47,6 +47,7 @@ public class VoiceManager : MonoBehaviour
     // 管理器引用
     private TaskManager taskManager;
     private MultiBucketManager multiBucketManager;
+    private HardModeManager hardModeManager;  // ✅ 困難模式管理器
     
     // 當前播放隊列
     private Queue<AudioClip> playbackQueue = new Queue<AudioClip>();
@@ -71,49 +72,43 @@ public class VoiceManager : MonoBehaviour
     
     private void Start()
     {
-        // 從 ServiceLocator 獲取管理器
-        if (!ServiceLocator.Instance.TryGet(out taskManager))
+        // 從 ServiceLocator 獲取管理器並立即訂閱事件（在 Start 中執行以確保 ServiceLocator 已註冊完成）
+        if (ServiceLocator.Instance.TryGet(out taskManager))
         {
-            Debug.LogWarning("[VoiceManager] TaskManager 未找到");
+            taskManager.OnTaskGenerated.AddListener(OnTaskGenerated);
+            Debug.Log("[VoiceManager] 已訂閱 TaskManager.OnTaskGenerated 事件（簡單/中級模式）");
+        }
+        else
+        {
+            Debug.LogWarning("[VoiceManager] TaskManager 未找到，無法訂閱事件");
         }
         
-        if (!ServiceLocator.Instance.TryGet(out multiBucketManager))
+        if (ServiceLocator.Instance.TryGet(out multiBucketManager))
         {
-            Debug.LogWarning("[VoiceManager] MultiBucketManager 未找到");
+            multiBucketManager.OnBucketStageCompleted.AddListener(OnStageCompleted);
+            Debug.Log("[VoiceManager] 已訂閱 MultiBucketManager.OnBucketStageCompleted 事件");
+        }
+        else
+        {
+            Debug.LogWarning("[VoiceManager] MultiBucketManager 未找到，無法訂閱事件");
         }
         
-        // 訂閱事件
-        SubscribeToEvents();
+        // ✅ 使用單例獲取 HardModeManager（困難模式）
+        hardModeManager = HardModeManager.Instance;
+        if (hardModeManager != null)
+        {
+            hardModeManager.OnTaskGenerated.AddListener(OnHardModeTaskGenerated);
+            Debug.Log("[VoiceManager] 已訂閱 HardModeManager.OnTaskGenerated 事件（困難模式，使用單例）");
+        }
+        else
+        {
+            Debug.LogWarning("[VoiceManager] HardModeManager.Instance 為 null，無法訂閱困難模式事件");
+        }
     }
     
     private void OnDestroy()
     {
-        UnsubscribeFromEvents();
-    }
-    
-    /// <summary>
-    /// 訂閱任務事件
-    /// </summary>
-    private void SubscribeToEvents()
-    {
-        if (taskManager != null)
-        {
-            taskManager.OnTaskGenerated.AddListener(OnTaskGenerated);
-            Debug.Log("[VoiceManager] 已訂閱 TaskManager 事件");
-        }
-        
-        if (multiBucketManager != null)
-        {
-            multiBucketManager.OnBucketStageCompleted.AddListener(OnStageCompleted);
-            Debug.Log("[VoiceManager] 已訂閱 MultiBucketManager 事件");
-        }
-    }
-    
-    /// <summary>
-    /// 取消訂閱事件
-    /// </summary>
-    private void UnsubscribeFromEvents()
-    {
+        // 取消訂閱事件
         if (taskManager != null)
         {
             taskManager.OnTaskGenerated.RemoveListener(OnTaskGenerated);
@@ -123,16 +118,21 @@ public class VoiceManager : MonoBehaviour
         {
             multiBucketManager.OnBucketStageCompleted.RemoveListener(OnStageCompleted);
         }
+        
+        if (hardModeManager != null)
+        {
+            hardModeManager.OnTaskGenerated.RemoveListener(OnHardModeTaskGenerated);
+        }
     }
     
     /// <summary>
-    /// 任務生成時播放語音
+    /// 任務生成時播放語音（簡單/中級模式）
     /// </summary>
     private void OnTaskGenerated(TaskData task)
     {
         if (!enableVoice || task == null) return;
         
-        Debug.Log($"[VoiceManager] 任務生成，類型: {task.taskType}");
+        Debug.Log($"[VoiceManager] 任務生成（TaskManager），類型: {task.taskType}");
         
         switch (task.taskType)
         {
@@ -151,6 +151,19 @@ public class VoiceManager : MonoBehaviour
                 PlayFullMultiStageTask(task);
                 break;
         }
+    }
+    
+    /// <summary>
+    /// 困難模式任務生成時播放語音（HardModeManager）
+    /// </summary>
+    private void OnHardModeTaskGenerated(HardModeTask hardTask)
+    {
+        if (!enableVoice || hardTask == null) return;
+        
+        Debug.Log($"[VoiceManager] 困難模式任務生成（HardModeManager），階段數: {hardTask.stages.Count}");
+        
+        // 播放完整的多階段任務語音
+        PlayFullHardModeTask(hardTask);
     }
     
     /// <summary>
@@ -231,6 +244,34 @@ public class VoiceManager : MonoBehaviour
     }
     
     /// <summary>
+    /// 播放困難模式完整語音（HardModeTask）："請幫我撈 X 隻 [顏色] 的魚、Y 隻 [顏色] 的魚、Z 隻 [顏色] 的魚"
+    /// </summary>
+    private void PlayFullHardModeTask(HardModeTask hardTask)
+    {
+        List<AudioClip> clips = new List<AudioClip>();
+        
+        clips.Add(voicePrefix_Please);      // "請幫我撈"
+        
+        // 遍歷所有階段
+        for (int i = 0; i < hardTask.stages.Count; i++)
+        {
+            TaskStage stage = hardTask.stages[i];
+            
+            clips.Add(GetNumberClip(stage.count));                 // "X 隻"
+            clips.Add(GetColorClipFromEnum(stage.targetColor));    // "[顏色] 的"
+            clips.Add(voiceSuffix_Fish);                           // "魚"
+            
+            // 如果不是最後一個階段，加上連接詞
+            if (i < hardTask.stages.Count - 1)
+            {
+                clips.Add(voiceConnector_And);          // "、"
+            }
+        }
+        
+        PlayClipSequence(clips);
+    }
+    
+    /// <summary>
     /// 播放當前階段提示："現在請撈 X 隻 [顏色] 的魚"
     /// </summary>
     private void PlayCurrentStagePrompt(SubTask stage)
@@ -270,7 +311,14 @@ public class VoiceManager : MonoBehaviour
     {
         // 將 FishColor enum 轉換為對應音檔
         FishColor color = FishColorHelper.GetColorFromTag(colorKey);
-        
+        return GetColorClipFromEnum(color);
+    }
+    
+    /// <summary>
+    /// 根據 FishColor enum 獲取對應音檔
+    /// </summary>
+    private AudioClip GetColorClipFromEnum(FishColor color)
+    {
         switch (color)
         {
             case FishColor.Red:
@@ -282,7 +330,7 @@ public class VoiceManager : MonoBehaviour
             case FishColor.Yellow:
                 return voiceColor_Yellow;
             default:
-                Debug.LogWarning($"[VoiceManager] 沒有顏色 {colorKey} 的音檔");
+                Debug.LogWarning($"[VoiceManager] 沒有顏色 {color} 的音檔");
                 return null;
         }
     }
