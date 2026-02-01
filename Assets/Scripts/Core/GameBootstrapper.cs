@@ -17,7 +17,7 @@ public class GameBootstrapper : MonoBehaviour
     [SerializeField] private FishSpawnManager fishSpawnManager;
     [SerializeField] private MultiBucketManager multiBucketManager;
     [SerializeField] private BucketManager bucketManager;  // ✅ Business Layer 水桶管理器
-    [SerializeField] private VoiceManager voiceManager;    // ✅ 語音管理器
+    [SerializeField] private VoiceManagerV2 voiceManagerV2;    // ✅ 語音管理器
     
     [Header("UI References")]
     [SerializeField] private TaskDisplayUI taskDisplayUI;
@@ -37,7 +37,7 @@ public class GameBootstrapper : MonoBehaviour
         if (fishSpawnManager == null) fishSpawnManager = FindFirstObjectByType<FishSpawnManager>();
         if (multiBucketManager == null) multiBucketManager = FindFirstObjectByType<MultiBucketManager>();
         if (bucketManager == null) bucketManager = FindFirstObjectByType<BucketManager>();
-        if (voiceManager == null) voiceManager = FindFirstObjectByType<VoiceManager>();  // ✅ 語音管理器
+        if (voiceManagerV2 == null) voiceManagerV2 = FindFirstObjectByType<VoiceManagerV2>();  // ✅ 語音管理器
         
         // UI and Handlers
         if (taskDisplayUI == null) taskDisplayUI = FindFirstObjectByType<TaskDisplayUI>();
@@ -60,14 +60,14 @@ public class GameBootstrapper : MonoBehaviour
         if (fishSpawnManager != null) locator.Register(fishSpawnManager);
         if (multiBucketManager != null) locator.Register(multiBucketManager);
         if (bucketManager != null) locator.Register(bucketManager);
-        if (voiceManager != null) locator.Register(voiceManager);  // ✅ 語音管理器
+        if (voiceManagerV2 != null) locator.Register(voiceManagerV2);  // ✅ 語音管理器
         
         // UI and Handlers
         if (taskDisplayUI != null) locator.Register(taskDisplayUI);
         if (confirmButtonHandler != null) locator.Register(confirmButtonHandler);
         if (retryButtonHandler != null) locator.Register(retryButtonHandler);
 
-        Debug.Log("[GameBootstrapper] ✅ 所有服務已註冊（含 BucketManager、VoiceManager）");
+        Debug.Log("[GameBootstrapper] ✅ 所有服務已註冊（含 BucketManager、VoiceManagerV2）");
     }
 
     // Clear services when uninstalling a scenario
